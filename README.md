@@ -37,7 +37,7 @@ La aplicación **no arranca sin `JWT_SECRET`** (Base64, mínimo 256 bits). Ning�
 **Linux / macOS**
 
 ```bash
-git clone https://github.com/<USUARIO>/auth-segura.git && cd auth-segura
+git clone https://github.com/ebersilva/auth-segura.git && cd auth-segura
 export JWT_SECRET="$(openssl rand -base64 48)"
 ./mvnw verify            # Checkstyle + 170 pruebas + JaCoCo + SpotBugs/FindSecBugs
 ./mvnw spring-boot:run   # API en http://localhost:8081
@@ -46,7 +46,7 @@ export JWT_SECRET="$(openssl rand -base64 48)"
 **Windows (PowerShell)**
 
 ```powershell
-git clone https://github.com/<USUARIO>/auth-segura.git; cd auth-segura
+git clone https://github.com/ebersilva/auth-segura.git; cd auth-segura
 $bytes = New-Object byte[] 48; [Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
 $env:JWT_SECRET = [Convert]::ToBase64String($bytes)
 .\mvnw.cmd verify

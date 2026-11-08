@@ -39,10 +39,14 @@ protección de rama (*Settings → Branches → Require status checks → Securi
 - **Mínimo privilegio**: `permissions: contents: read` global; `security-events: write` solo en
   los jobs que suben SARIF y `pull-requests: write` solo en Dependency Review.
 - **Caché** de `~/.m2` con `actions/setup-java` (`cache: maven`) y `-ntp` para logs limpios.
+- **Trivy sin red hacia Maven Central**: el job llena `~/.m2` (`dependency:go-offline`, con caché) y Trivy lo lee
+  con `--offline-scan`. En la primera ejecución real, Maven Central respondió 429 a los runners compartidos y el
+  escaneo abortó sin analizar nada (hallazgo H10). Se verificó que en este modo sigue detectando los 9 CVE de
+  Boot 4.1.1.
 - **`concurrency`** cancela ejecuciones viejas de la misma rama.
 - **Imágenes fijadas** (`aquasec/trivy:0.76.1`, `zricethezav/gitleaks:v8.30.1`), sin `curl | bash`.
   Dependabot actualiza las acciones.
-- **SARIF de Trivy** en la pestaña Security, aunque el gate falle (`if: always()`).
+- **SARIF de Trivy** en la pestaña Security, aunque el gate falle (`if: always()`, solo si el reporte existe).
 - **Reportes** de JaCoCo, SpotBugs y Surefire como artefacto durante 14 días.
 - **Ejecución semanal** programada: una CVE publicada hoy rompe el build el lunes aunque nadie
   haya tocado el código.

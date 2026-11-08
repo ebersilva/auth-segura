@@ -3,6 +3,12 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [versionado semántico](https://semver.org/lang/es/).
 
+## [0.1.1] - 2026-11-07
+
+### Corregido
+- CI: el job de Trivy fallaba en GitHub Actions con `429 Too Many Requests` de Maven Central antes de escanear.
+  Ahora llena `~/.m2` con `dependency:go-offline` y Trivy escanea con `--offline-scan` (hallazgo H10).
+
 ## [0.1.0] - 2026-11-07
 
 ### Añadido

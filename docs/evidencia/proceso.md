@@ -139,6 +139,25 @@ El gate funcionó sobre la documentación, no solo sobre el código.
 - **Lección:** "en mi máquina pasa" no es evidencia. Verificar el artefacto que realmente se entrega, en un entorno
   limpio, encontró un defecto que 170 pruebas en verde no mostraban.
 
+### H10 — El gate de Trivy falló en GitHub Actions sin llegar a escanear (primer push)
+
+- **Detección:** en la primera ejecución real del workflow en GitHub (push de `6882312`), los jobs de build, Gitleaks
+  y CodeQL pasaron, pero `Trivy` falló en el paso del reporte SARIF. La anotación decía `Path does not exist:
+  trivy.sarif` y el gate ni siquiera llegó a ejecutarse.
+- **Hipótesis:** no eran vulnerabilidades. El escaneo abortaba antes de generar el reporte. Al reproducir localmente
+  el mismo comando sobre el commit exacto (`git archive HEAD`), Trivy terminó con
+  `FATAL remote Maven repository returned 429 Too Many Requests … Retry-After: 1800`. Para resolver el árbol de
+  dependencias del `pom.xml`, Trivy descarga los POM de Maven Central, que limita por IP, y los runners
+  de GitHub comparten IPs.
+- **Corrección:** el job instala Java con caché de Maven, llena `~/.m2` con `./mvnw dependency:go-offline`, monta
+  `~/.m2` en el contenedor y ejecuta Trivy con `--offline-scan`. El SARIF solo se sube si existe.
+- **Verificación de que el gate no quedó ciego:** con la misma configuración, el escaneo da 0 hallazgos con Boot 4.1.2
+  y, al bajar una copia a 4.1.1, vuelve a encontrar los **9 CVE (4 CRITICAL, 5 HIGH)** y sale con código 1.
+  actionlint: 0 errores.
+- **Lección:** validar la sintaxis del workflow (actionlint) y correr las herramientas en local no equivale a ejecutarlo
+  en la infraestructura real. Un gate que se cae por la red parece "rojo por seguridad" sin haber analizado nada.
+  Hay que distinguir **falla del escaneo** de **hallazgo del escaneo**.
+
 ## 4. Prompts utilizados
 
 Los prompts estructurados completos están en `docs/prompts/`. Ejemplo representativo (prompt `02`, resumido):

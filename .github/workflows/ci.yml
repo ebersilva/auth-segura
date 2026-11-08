@@ -103,20 +103,31 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v5
+      # Trivy resuelve el árbol de dependencias del pom.xml. Si lo hace contra Maven Central, los
+      # runners compartidos reciben 429 Too Many Requests y el job falla sin escanear (primer push).
+      # Se llena ~/.m2 con el wrapper (con caché) y Trivy lo lee en modo --offline-scan.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Descargar dependencias a ~/.m2 (Trivy las lee sin consultar Maven Central)
+        run: ./mvnw -B -ntp dependency:go-offline
       - name: Reporte SARIF para la pestaña Security
         run: >
-          docker run --rm -v "$PWD:/src" -w /src ${{ env.TRIVY_IMAGE }}
-          fs --scanners vuln,secret,misconfig --format sarif --output trivy.sarif /src
+          docker run --rm -v "$PWD:/src" -v "$HOME/.m2:/root/.m2:ro" -w /src ${{ env.TRIVY_IMAGE }}
+          fs --offline-scan --skip-version-check --scanners vuln,secret,misconfig
+          --format sarif --output trivy.sarif /src
       - uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && hashFiles('trivy.sarif') != ''
         with:
           sarif_file: trivy.sarif
           category: trivy
       - name: Gate — falla con vulnerabilidades HIGH/CRITICAL que tengan parche
         run: >
-          docker run --rm -v "$PWD:/src" -w /src ${{ env.TRIVY_IMAGE }}
-          fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --ignore-unfixed
-          --exit-code 1 /src
+          docker run --rm -v "$PWD:/src" -v "$HOME/.m2:/root/.m2:ro" -w /src ${{ env.TRIVY_IMAGE }}
+          fs --offline-scan --skip-version-check --scanners vuln,secret,misconfig
+          --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 /src
 
   # Gate 5 — Detección de secretos en TODO el historial de git
   gitleaks:
