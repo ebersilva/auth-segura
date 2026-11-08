@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RefreshTokenService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.auth</a> &gt; <span class="el_source">RefreshTokenService.java</span></div><h1>RefreshTokenService.java</h1><pre class="source lang-java linenums">package com.equipo.auth.auth;
+
+import com.equipo.auth.common.LogSanitizer;
+import com.equipo.auth.config.JwtProperties;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Ciclo de vida de los refresh tokens: emisión, rotación con detección de reutilización y revocación.
+ *
+ * &lt;p&gt;Cada token es de un solo uso. Si un token ya usado se presenta de nuevo, alguien lo copió: se
+ * revoca toda la familia (el atacante y la víctima pierden la sesión y la víctima debe iniciar sesión).
+ */
+@Service
+public class RefreshTokenService {
+
+<span class="fc" id="L22">    private static final Logger LOG = LoggerFactory.getLogger(RefreshTokenService.class);</span>
+
+    private final RefreshTokenRepository repository;
+    private final TokenHasher hasher;
+    private final JwtProperties properties;
+    private final Clock clock;
+
+    public RefreshTokenService(RefreshTokenRepository repository, TokenHasher hasher, JwtProperties properties,
+<span class="fc" id="L30">            Clock clock) {</span>
+<span class="fc" id="L31">        this.repository = repository;</span>
+<span class="fc" id="L32">        this.hasher = hasher;</span>
+<span class="fc" id="L33">        this.properties = properties;</span>
+<span class="fc" id="L34">        this.clock = clock;</span>
+<span class="fc" id="L35">    }</span>
+
+    /**
+     * Resultado de emitir o rotar un refresh token.
+     *
+     * @param userId dueño del token
+     * @param token  valor en claro para el cliente
+     */
+<span class="fc" id="L43">    public record Issued(UUID userId, String token) {</span>
+
+        @Override
+        public String toString() {
+<span class="fc" id="L47">            return &quot;Issued[userId=&quot; + userId + &quot;, token=****]&quot;;</span>
+        }
+    }
+
+    /**
+     * Emite un refresh token en una familia nueva (login).
+     *
+     * @param userId dueño
+     * @return token emitido
+     */
+    @Transactional
+    public Issued issueNewFamily(UUID userId) {
+<span class="fc" id="L59">        return issue(userId, UUID.randomUUID());</span>
+    }
+
+    /**
+     * Rota un refresh token: lo invalida y emite otro de la misma familia.
+     *
+     * &lt;p&gt;{@code noRollbackFor}: la revocación de la familia ante una reutilización debe confirmarse
+     * aunque el método termine lanzando la excepción.
+     *
+     * @param rawToken token presentado por el cliente
+     * @return nuevo token
+     * @throws InvalidTokenException si no existe, expiró o ya fue usado (en este caso revoca la familia)
+     */
+    @Transactional(noRollbackFor = InvalidTokenException.class)
+    public Issued rotate(String rawToken) {
+<span class="fc" id="L74">        Instant now = clock.instant();</span>
+<span class="fc" id="L75">        RefreshToken current = repository.findByTokenHash(hasher.hash(rawToken))</span>
+<span class="fc" id="L76">                .orElseThrow(InvalidTokenException::new);</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (current.isRevoked()) {</span>
+<span class="fc" id="L78">            int revoked = repository.revokeFamily(current.getFamilyId(), now);</span>
+<span class="fc" id="L79">            LOG.warn(&quot;SECURITY refresh_token_reuse user={} family={} revoked={}&quot;,</span>
+<span class="fc" id="L80">                    LogSanitizer.safe(current.getUserId()), LogSanitizer.safe(current.getFamilyId()), revoked);</span>
+<span class="fc" id="L81">            throw new InvalidTokenException();</span>
+        }
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (current.isExpired(now)) {</span>
+<span class="fc" id="L84">            throw new InvalidTokenException();</span>
+        }
+<span class="fc" id="L86">        current.revoke(now);</span>
+<span class="fc" id="L87">        repository.saveAndFlush(current);</span>
+<span class="fc" id="L88">        return issue(current.getUserId(), current.getFamilyId());</span>
+    }
+
+    /**
+     * Revoca la familia del token si pertenece al usuario (logout).
+     *
+     * @param rawToken token presentado
+     * @param userId   usuario autenticado por el access token
+     * @throws InvalidTokenException si el token no existe o es de otro usuario
+     */
+    @Transactional
+    public void revokeFamily(String rawToken, UUID userId) {
+<span class="fc" id="L100">        RefreshToken token = repository.findByTokenHash(hasher.hash(rawToken))</span>
+<span class="fc" id="L101">                .filter(t -&gt; t.getUserId().equals(userId))</span>
+<span class="fc" id="L102">                .orElseThrow(InvalidTokenException::new);</span>
+<span class="fc" id="L103">        repository.revokeFamily(token.getFamilyId(), clock.instant());</span>
+<span class="fc" id="L104">    }</span>
+
+    /** Segundos de vigencia del refresh token. */
+    public long ttlSeconds() {
+<span class="fc" id="L108">        return properties.refreshTokenTtl().toSeconds();</span>
+    }
+
+    private Issued issue(UUID userId, UUID familyId) {
+<span class="fc" id="L112">        Instant now = clock.instant();</span>
+<span class="fc" id="L113">        String raw = hasher.newToken();</span>
+<span class="fc" id="L114">        repository.save(new RefreshToken(hasher.hash(raw), userId, familyId, now,</span>
+<span class="fc" id="L115">                now.plus(properties.refreshTokenTtl())));</span>
+<span class="fc" id="L116">        return new Issued(userId, raw);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

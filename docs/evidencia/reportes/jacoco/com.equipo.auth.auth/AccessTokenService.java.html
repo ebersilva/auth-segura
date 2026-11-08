@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccessTokenService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.auth</a> &gt; <span class="el_source">AccessTokenService.java</span></div><h1>AccessTokenService.java</h1><pre class="source lang-java linenums">package com.equipo.auth.auth;
+
+import com.equipo.auth.config.JwtProperties;
+import com.equipo.auth.user.User;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.stereotype.Service;
+
+/** Emite access tokens JWT firmados con HS256. */
+@Service
+public class AccessTokenService {
+
+    private final JwtEncoder encoder;
+    private final JwtProperties properties;
+    private final Clock clock;
+
+<span class="fc" id="L24">    public AccessTokenService(JwtEncoder encoder, JwtProperties properties, Clock clock) {</span>
+<span class="fc" id="L25">        this.encoder = encoder;</span>
+<span class="fc" id="L26">        this.properties = properties;</span>
+<span class="fc" id="L27">        this.clock = clock;</span>
+<span class="fc" id="L28">    }</span>
+
+    /**
+     * Emite un access token para el usuario.
+     *
+     * @param user usuario autenticado
+     * @return JWT compacto con {@code iss, aud, sub, iat, exp, jti, username, roles}
+     */
+    public String issue(User user) {
+<span class="fc" id="L37">        Instant now = clock.instant();</span>
+<span class="fc" id="L38">        JwtClaimsSet claims = JwtClaimsSet.builder()</span>
+<span class="fc" id="L39">                .issuer(properties.issuer())</span>
+<span class="fc" id="L40">                .audience(List.of(properties.audience()))</span>
+<span class="fc" id="L41">                .subject(user.getId().toString())</span>
+<span class="fc" id="L42">                .issuedAt(now)</span>
+<span class="fc" id="L43">                .expiresAt(now.plus(properties.accessTokenTtl()))</span>
+<span class="fc" id="L44">                .id(UUID.randomUUID().toString())</span>
+<span class="fc" id="L45">                .claim(&quot;username&quot;, user.getUsername())</span>
+<span class="fc" id="L46">                .claim(&quot;roles&quot;, List.of(user.getRole().name()))</span>
+<span class="fc" id="L47">                .build();</span>
+<span class="fc" id="L48">        JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).type(&quot;JWT&quot;).build();</span>
+<span class="fc" id="L49">        return encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();</span>
+    }
+
+    /** Segundos de vigencia del access token. */
+    public long ttlSeconds() {
+<span class="fc" id="L54">        return properties.accessTokenTtl().toSeconds();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

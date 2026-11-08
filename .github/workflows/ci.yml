@@ -1,0 +1,148 @@
+# Pipeline CI/CD con security gates — auth-segura
+# Cada job es un gate: si alguno falla, el job final "security-gate" falla y la regla de
+# protección de la rama main impide el merge. Documentación: docs/ci-cd.md
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1" # lunes 06:00 UTC: detecta CVE nuevas aunque no haya cambios
+  workflow_dispatch:
+
+# Mínimo privilegio por defecto; cada job pide solo lo que necesita
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: "25"
+  TRIVY_IMAGE: aquasec/trivy:0.76.1
+  GITLEAKS_IMAGE: zricethezav/gitleaks:v8.30.1
+
+jobs:
+  # Gate 1 — Build, linting, pruebas, cobertura y security linting (Checkstyle + JUnit + JaCoCo + SpotBugs/FindSecBugs)
+  build-test:
+    name: Build, tests y cobertura (>= 90 %)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: ./mvnw verify (Checkstyle, pruebas, JaCoCo, SpotBugs + FindSecBugs)
+        run: ./mvnw -B -ntp verify
+      - name: Publicar reportes (cobertura y SpotBugs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-calidad
+          path: |
+            target/site/jacoco/
+            target/spotbugsXml.xml
+            target/surefire-reports/
+          retention-days: 14
+
+  # Gate 2 — Análisis estático semántico (SAST) con CodeQL
+  codeql:
+    name: CodeQL (SAST)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: java-kotlin
+          build-mode: manual
+          queries: security-extended
+      - name: Compilar para CodeQL
+        run: ./mvnw -B -ntp -DskipTests -Dcheckstyle.skip -Dspotbugs.skip compile
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:java-kotlin"
+
+  # Gate 3 — Dependency scanning en PR: bloquea dependencias nuevas con CVE >= high o licencias no permitidas
+  dependency-review:
+    name: Dependency Review (PR)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-3.0-only, AGPL-3.0-only
+          comment-summary-in-pr: on-failure
+
+  # Gate 4 — Vulnerability scanning: dependencias (pom.xml), configuración y secretos con Trivy
+  trivy:
+    name: Trivy (vulnerabilidades HIGH/CRITICAL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v5
+      - name: Reporte SARIF para la pestaña Security
+        run: >
+          docker run --rm -v "$PWD:/src" -w /src ${{ env.TRIVY_IMAGE }}
+          fs --scanners vuln,secret,misconfig --format sarif --output trivy.sarif /src
+      - uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: trivy.sarif
+          category: trivy
+      - name: Gate — falla con vulnerabilidades HIGH/CRITICAL que tengan parche
+        run: >
+          docker run --rm -v "$PWD:/src" -w /src ${{ env.TRIVY_IMAGE }}
+          fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --ignore-unfixed
+          --exit-code 1 /src
+
+  # Gate 5 — Detección de secretos en TODO el historial de git
+  gitleaks:
+    name: Gitleaks (secretos)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Escanear historial completo
+        run: >
+          docker run --rm -v "$PWD:/repo" ${{ env.GITLEAKS_IMAGE }}
+          git /repo --redact --verbose --exit-code 1
+
+  # Agregador: un único check requerido en la protección de rama
+  security-gate:
+    name: Security gate
+    if: always()
+    needs: [build-test, codeql, dependency-review, trivy, gitleaks]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar que todos los gates pasaron
+        run: |
+          echo '${{ toJSON(needs) }}'
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "Al menos un gate de seguridad falló: el merge queda bloqueado." >&2
+            exit 1
+          fi

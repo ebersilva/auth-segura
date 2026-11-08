@@ -1,0 +1,55 @@
+# Verificación del zip en una carpeta limpia: el sistema de archivos listó las clases en otro orden
+# y aparecieron 10 fallos que el orden alfabético ocultaba.
+
+Running com.equipo.auth.user.UserTest
+Running com.equipo.auth.security.RefreshTokenReuseSecurityTest
+Running com.equipo.auth.security.JwtSecurityTest
+Running com.equipo.auth.security.InjectionAndXssSecurityTest
+Running com.equipo.auth.security.FiltersAndEntryPointTest
+Running com.equipo.auth.security.BruteForceSecurityTest
+Running com.equipo.auth.security.AccessTokenValidatorsTest
+Running com.equipo.auth.security.AccessTokenDenylistTest
+Running com.equipo.auth.ratelimit.RateLimiterTest
+Running com.equipo.auth.config.StartupWithoutSecretTest
+Running com.equipo.auth.config.PasswordConfigTest
+Running com.equipo.auth.config.JwtPropertiesTest
+Running com.equipo.auth.common.ProblemJsonTest
+Running com.equipo.auth.common.LogSanitizerTest
+Running com.equipo.auth.common.GlobalExceptionHandlerTest
+Running com.equipo.auth.auth.TokenHasherTest
+Running com.equipo.auth.auth.TokenClaimsTest
+Running com.equipo.auth.auth.RegistrationServiceTest
+Running com.equipo.auth.auth.RegisterRequestTest
+Running com.equipo.auth.auth.RefreshTokenServiceTest
+Running com.equipo.auth.auth.RefreshConcurrencyIntegrationTest
+Running com.equipo.auth.auth.PasswordPolicyTest
+Running com.equipo.auth.auth.LoginAttemptGuardTest
+Running com.equipo.auth.auth.AuthServiceTest
+Running com.equipo.auth.auth.AuthFlowIntegrationTest
+Running com.equipo.auth.auth.AccessTokenServiceTest
+
+2026-11-07T20:30:56.792-06:00  WARN 72279 --- [auth-segura] [           main] org.hibernate.orm.jdbc.error             : Table "USERS" not found (this database is empty); SQL statement:
+select u1_0.id from users u1_0 where u1_0.username=? or u1_0.email=? fetch first ? rows only [42104-240]
+2026-11-07T20:30:56.797-06:00 ERROR 72279 --- [auth-segura] [           main] c.e.a.c.error.GlobalExceptionHandler     : Error no controlado
+
+[ERROR] Failures: 
+[ERROR]   AuthFlowIntegrationTest.accessToken_expiraALos15Minutos:118->AbstractApiTest.registerUser:66 Status expected:<201> but was:<500>
+[ERROR]   AuthFlowIntegrationTest.flujoCompleto_registroLoginPerfilRefreshLogout:35 Status expected:<201> but was:<500>
+[ERROR]   AuthFlowIntegrationTest.logout_conRefreshDeOtroUsuarioDevuelve401:184->AbstractApiTest.registerUser:66 Status expected:<201> but was:<500>
+[ERROR]   AuthFlowIntegrationTest.logout_sinAccessTokenDevuelve401:196->AbstractApiTest.registerUser:66 Status expected:<201> but was:<500>
+[ERROR]   AuthFlowIntegrationTest.perfil_deUsuarioEliminadoDevuelve401:205->AbstractApiTest.registerUser:66 Status expected:<201> but was:<500>
+[ERROR]   AuthFlowIntegrationTest.refreshToken_expiradoDevuelve401:132->AbstractApiTest.registerUser:66 Status expected:<201> but was:<500>
+[ERROR]   AuthFlowIntegrationTest.refreshToken_seGuardaSoloHasheado:107->AbstractApiTest.registerUser:66 Status expected:<201> but was:<500>
+[ERROR]   AuthFlowIntegrationTest.registro_duplicadoDevuelve409Generico:144->AbstractApiTest.registerUser:66 Status expected:<201> but was:<500>
+[ERROR]   AuthFlowIntegrationTest.registro_yPerfil_devuelvenElMismoCreatedAt:93->AbstractApiTest.login:73 Status expected:<200> but was:<500>
+[ERROR]   RefreshConcurrencyIntegrationTest.refreshSimultaneo_soloUnoTieneExito:20->AbstractApiTest.registerUser:66 Status expected:<201> but was:<500>
+[INFO] 
+[ERROR] Tests run: 170, Failures: 10, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[ERROR] BUILD FAILURE
+
+# Después del fix (base H2 propia por contexto), ./mvnw test con -Dsurefire.runOrder=:
+#   reversealphabetical -> BUILD SUCCESS (exit 0)
+#   alphabetical -> BUILD SUCCESS (exit 0)
+#   random -> BUILD SUCCESS (exit 0)

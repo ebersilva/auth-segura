@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.common.error</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package com.equipo.auth.common.error;
+
+import com.equipo.auth.auth.InvalidCredentialsException;
+import com.equipo.auth.auth.InvalidTokenException;
+import com.equipo.auth.auth.RegistrationConflictException;
+import com.equipo.auth.auth.WeakPasswordException;
+import com.equipo.auth.ratelimit.RateLimitExceededException;
+import java.util.Comparator;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+/**
+ * Traduce excepciones a RFC 9457 ({@code application/problem+json}) con mensajes genéricos: nunca
+ * incluye stack traces, nombres de clases, SQL ni el valor rechazado (podría ser un payload malicioso).
+ */
+@RestControllerAdvice
+<span class="fc" id="L30">public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {</span>
+
+<span class="fc" id="L32">    private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);</span>
+
+    static final String INVALID_DATA = &quot;La solicitud contiene datos inválidos&quot;;
+
+    /** Errores del esquema: uno por campo, ordenados para respuestas deterministas. */
+    @Override
+    protected ResponseEntity&lt;Object&gt; handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+<span class="fc" id="L40">        List&lt;FieldErrorDetail&gt; errors = ex.getBindingResult().getFieldErrors().stream()</span>
+<span class="fc" id="L41">                .map(e -&gt; new FieldErrorDetail(e.getField(), e.getDefaultMessage()))</span>
+<span class="fc" id="L42">                .sorted(Comparator.comparing(FieldErrorDetail::field).thenComparing(FieldErrorDetail::message))</span>
+<span class="fc" id="L43">                .toList();</span>
+<span class="fc" id="L44">        return ResponseEntity.badRequest().body(validationProblem(errors));</span>
+    }
+
+    /** JSON mal formado, tipos incorrectos o propiedades no permitidas (mass assignment). */
+    @Override
+    protected ResponseEntity&lt;Object&gt; handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+<span class="fc" id="L51">        return ResponseEntity.badRequest().body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,</span>
+                &quot;El cuerpo no es un JSON válido o contiene campos no permitidos&quot;));
+    }
+
+    /** Contraseña fuera de política. */
+    @ExceptionHandler(WeakPasswordException.class)
+    public ProblemDetail handleWeakPassword(WeakPasswordException ex) {
+<span class="fc" id="L58">        return validationProblem(List.of(new FieldErrorDetail(&quot;password&quot;, ex.getMessage())));</span>
+    }
+
+    /** Login fallido (mensaje único). */
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
+<span class="fc" id="L64">        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());</span>
+    }
+
+    /** Refresh token o sesión inválidos. */
+    @ExceptionHandler(InvalidTokenException.class)
+    public ProblemDetail handleInvalidToken(InvalidTokenException ex) {
+<span class="fc" id="L70">        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());</span>
+    }
+
+    /** Dos rotaciones simultáneas del mismo refresh token: la perdedora se trata como token inválido. */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ProblemDetail handleConcurrentRotation(ObjectOptimisticLockingFailureException ex) {
+<span class="fc" id="L76">        LOG.warn(&quot;SECURITY refresh_token_concurrent_use&quot;);</span>
+<span class="fc" id="L77">        return handleInvalidToken(new InvalidTokenException());</span>
+    }
+
+    /** Usuario o correo duplicados. */
+    @ExceptionHandler(RegistrationConflictException.class)
+    public ProblemDetail handleConflict(RegistrationConflictException ex) {
+<span class="fc" id="L83">        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());</span>
+    }
+
+    /** Límite de peticiones superado: 429 con {@code Retry-After}. */
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; handleRateLimit(RateLimitExceededException ex) {
+<span class="fc" id="L89">        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)</span>
+<span class="fc" id="L90">                .header(HttpHeaders.RETRY_AFTER, Long.toString(ex.getRetryAfterSeconds()))</span>
+<span class="fc" id="L91">                .body(ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage()));</span>
+    }
+
+    /** Cualquier otro error: 500 sin detalles internos; el detalle queda solo en el log. */
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleUnexpected(Exception ex) {
+<span class="fc" id="L97">        LOG.error(&quot;Error no controlado&quot;, ex);</span>
+<span class="fc" id="L98">        return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, &quot;Error interno del servidor&quot;);</span>
+    }
+
+    private static ProblemDetail validationProblem(List&lt;FieldErrorDetail&gt; errors) {
+<span class="fc" id="L102">        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, INVALID_DATA);</span>
+<span class="fc" id="L103">        problem.setProperty(&quot;errors&quot;, errors);</span>
+<span class="fc" id="L104">        return problem;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

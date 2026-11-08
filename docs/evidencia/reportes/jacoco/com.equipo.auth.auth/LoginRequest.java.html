@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.auth</a> &gt; <span class="el_source">LoginRequest.java</span></div><h1>LoginRequest.java</h1><pre class="source lang-java linenums">package com.equipo.auth.auth;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import java.util.Locale;
+
+/**
+ * Credenciales de login.
+ *
+ * @param username usuario (se normaliza a minúsculas)
+ * @param password contraseña
+ */
+public record LoginRequest(
+        @NotNull(message = &quot;es obligatorio&quot;)
+        @Pattern(regexp = ValidationPatterns.USERNAME, message = &quot;formato inválido&quot;)
+        String username,
+
+        @NotNull(message = &quot;es obligatorio&quot;)
+        @Size(min = 1, max = 128, message = &quot;debe tener entre 1 y 128 caracteres&quot;)
+        String password) {
+
+    /** Normaliza el usuario igual que en el registro. */
+<span class="fc" id="L24">    public LoginRequest {</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">        username = username == null ? null : username.strip().toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L26">    }</span>
+
+    @Override
+    public String toString() {
+<span class="fc" id="L30">        return &quot;LoginRequest[username=&quot; + username + &quot;, password=****]&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

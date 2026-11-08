@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>User.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.user</a> &gt; <span class="el_source">User.java</span></div><h1>User.java</h1><pre class="source lang-java linenums">package com.equipo.auth.user;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.UUID;
+
+/** Usuario registrado. Solo guarda el hash Argon2id de la contraseña, nunca la contraseña. */
+@Entity
+@Table(name = &quot;users&quot;)
+public class User {
+
+    @Id
+    private UUID id;
+
+    @Column(nullable = false, unique = true, length = 30)
+    private String username;
+
+    @Column(nullable = false, unique = true, length = 254)
+    private String email;
+
+    @Column(nullable = false, length = 60)
+    private String displayName;
+
+    @Column(nullable = false, length = 200)
+    private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
+
+    @Column(nullable = false)
+    private int failedLoginAttempts;
+
+    private Instant lockedUntil;
+
+    @Column(nullable = false)
+    private Instant createdAt;
+
+<span class="fc" id="L45">    protected User() {</span>
+        // requerido por JPA
+<span class="fc" id="L47">    }</span>
+
+    /**
+     * Crea un usuario con rol {@link Role#USER}.
+     *
+     * @param username     nombre de usuario normalizado
+     * @param email        correo normalizado
+     * @param displayName  nombre visible
+     * @param passwordHash hash Argon2id de la contraseña
+     * @param createdAt    instante de creación
+     */
+<span class="fc" id="L58">    public User(String username, String email, String displayName, String passwordHash, Instant createdAt) {</span>
+<span class="fc" id="L59">        this.id = UUID.randomUUID();</span>
+<span class="fc" id="L60">        this.username = username;</span>
+<span class="fc" id="L61">        this.email = email;</span>
+<span class="fc" id="L62">        this.displayName = displayName;</span>
+<span class="fc" id="L63">        this.passwordHash = passwordHash;</span>
+<span class="fc" id="L64">        this.role = Role.USER;</span>
+<span class="fc" id="L65">        this.createdAt = createdAt;</span>
+<span class="fc" id="L66">    }</span>
+
+    /**
+     * Indica si la cuenta está bloqueada.
+     *
+     * @param now instante actual
+     * @return {@code true} si hay un bloqueo vigente
+     */
+    public boolean isLocked(Instant now) {
+<span class="fc bfc" id="L75" title="All 4 branches covered.">        return lockedUntil != null &amp;&amp; now.isBefore(lockedUntil);</span>
+    }
+
+    /**
+     * Registra un intento fallido y bloquea la cuenta al llegar al máximo.
+     *
+     * @param now          instante actual
+     * @param maxAttempts  intentos permitidos antes del bloqueo
+     * @param lockDuration duración del bloqueo
+     * @return {@code true} si este intento provocó el bloqueo
+     */
+    public boolean registerFailedLogin(Instant now, int maxAttempts, Duration lockDuration) {
+<span class="fc" id="L87">        failedLoginAttempts++;</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (failedLoginAttempts &gt;= maxAttempts) {</span>
+<span class="fc" id="L89">            lockedUntil = now.plus(lockDuration);</span>
+<span class="fc" id="L90">            failedLoginAttempts = 0;</span>
+<span class="fc" id="L91">            return true;</span>
+        }
+<span class="fc" id="L93">        return false;</span>
+    }
+
+    /** Reinicia el contador tras un login exitoso. */
+    public void resetFailedLogins() {
+<span class="fc" id="L98">        failedLoginAttempts = 0;</span>
+<span class="fc" id="L99">        lockedUntil = null;</span>
+<span class="fc" id="L100">    }</span>
+
+    public UUID getId() {
+<span class="fc" id="L103">        return id;</span>
+    }
+
+    public String getUsername() {
+<span class="fc" id="L107">        return username;</span>
+    }
+
+    public String getEmail() {
+<span class="fc" id="L111">        return email;</span>
+    }
+
+    public String getDisplayName() {
+<span class="fc" id="L115">        return displayName;</span>
+    }
+
+    public String getPasswordHash() {
+<span class="fc" id="L119">        return passwordHash;</span>
+    }
+
+    public Role getRole() {
+<span class="fc" id="L123">        return role;</span>
+    }
+
+    public int getFailedLoginAttempts() {
+<span class="fc" id="L127">        return failedLoginAttempts;</span>
+    }
+
+    public Instant getLockedUntil() {
+<span class="fc" id="L131">        return lockedUntil;</span>
+    }
+
+    public Instant getCreatedAt() {
+<span class="fc" id="L135">        return createdAt;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

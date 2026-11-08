@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RequestSizeFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.security</a> &gt; <span class="el_source">RequestSizeFilter.java</span></div><h1>RequestSizeFilter.java</h1><pre class="source lang-java linenums">package com.equipo.auth.security;
+
+import com.equipo.auth.common.error.ProblemJson;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+/**
+ * Rechaza cuerpos demasiado grandes antes de leerlos (protección de memoria y CPU).
+ *
+ * &lt;p&gt;Cuerpos de más de {@code maxBytes} responden 413. Cualquier petición con {@code Transfer-Encoding}
+ * responde 411: su tamaño no puede comprobarse antes de leerla, y la combinación
+ * {@code Transfer-Encoding} + {@code Content-Length} es el vector de HTTP request smuggling (RFC 9112 §6.1).
+ */
+public class RequestSizeFilter extends OncePerRequestFilter {
+
+    private final long maxBytes;
+
+<span class="fc" id="L22">    public RequestSizeFilter(long maxBytes) {</span>
+<span class="fc" id="L23">        this.maxBytes = maxBytes;</span>
+<span class="fc" id="L24">    }</span>
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        if (request.getHeader(&quot;Transfer-Encoding&quot;) != null) {</span>
+<span class="fc" id="L30">            ProblemJson.write(response, 411, &quot;Length Required&quot;,</span>
+<span class="fc" id="L31">                    &quot;Se requiere la cabecera Content-Length&quot;, request.getRequestURI());</span>
+<span class="fc" id="L32">            return;</span>
+        }
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (request.getContentLengthLong() &gt; maxBytes) {</span>
+<span class="fc" id="L35">            ProblemJson.write(response, 413, &quot;Content Too Large&quot;,</span>
+<span class="fc" id="L36">                    &quot;El cuerpo excede el tamaño máximo permitido&quot;, request.getRequestURI());</span>
+<span class="fc" id="L37">            return;</span>
+        }
+<span class="fc" id="L39">        chain.doFilter(request, response);</span>
+<span class="fc" id="L40">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RateLimiter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.ratelimit</a> &gt; <span class="el_source">RateLimiter.java</span></div><h1>RateLimiter.java</h1><pre class="source lang-java linenums">package com.equipo.auth.ratelimit;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Rate limiter de tipo token bucket, en memoria y thread-safe, con una cubeta por clave.
+ *
+ * &lt;p&gt;Cada cubeta tiene {@code capacity} fichas y se recarga de forma continua: {@code capacity}
+ * fichas cada {@code refillPeriod}. Cada petición consume una ficha. Con una sola instancia de la
+ * aplicación es suficiente; con varias, el estado debe moverse a un almacén compartido (Redis).
+ */
+public final class RateLimiter {
+
+    /** Número de claves a partir del cual se desalojan las cubetas llenas (inactivas). */
+    static final int EVICTION_THRESHOLD = 10_000;
+
+    private final int capacity;
+    private final double nanosPerToken;
+    private final Clock clock;
+<span class="fc" id="L24">    private final Map&lt;String, Bucket&gt; buckets = new ConcurrentHashMap&lt;&gt;();</span>
+
+    /**
+     * Crea el limitador.
+     *
+     * @param capacity     fichas por periodo (ráfaga máxima)
+     * @param refillPeriod periodo de recarga completa
+     * @param clock        reloj (controlable en tests)
+     */
+<span class="fc" id="L33">    public RateLimiter(int capacity, Duration refillPeriod, Clock clock) {</span>
+<span class="fc bfc" id="L34" title="All 6 branches covered.">        if (capacity &lt; 1 || refillPeriod.isZero() || refillPeriod.isNegative()) {</span>
+<span class="fc" id="L35">            throw new IllegalArgumentException(&quot;capacity y refillPeriod deben ser positivos&quot;);</span>
+        }
+<span class="fc" id="L37">        this.capacity = capacity;</span>
+<span class="fc" id="L38">        this.nanosPerToken = (double) refillPeriod.toNanos() / capacity;</span>
+<span class="fc" id="L39">        this.clock = clock;</span>
+<span class="fc" id="L40">    }</span>
+
+    /**
+     * Resultado de un intento.
+     *
+     * @param allowed           si la petición puede continuar
+     * @param retryAfterSeconds segundos hasta la siguiente ficha (0 si se permitió)
+     */
+<span class="fc" id="L48">    public record Decision(boolean allowed, long retryAfterSeconds) {</span>
+    }
+
+    /**
+     * Intenta consumir una ficha de la cubeta de la clave.
+     *
+     * @param key identificador (IP, usuario…)
+     * @return decisión
+     */
+    public Decision tryAcquire(String key) {
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (buckets.size() &gt;= EVICTION_THRESHOLD) {</span>
+<span class="fc" id="L59">            evictFullBuckets();</span>
+        }
+<span class="fc" id="L61">        Instant now = clock.instant();</span>
+<span class="fc" id="L62">        return buckets.computeIfAbsent(key, k -&gt; new Bucket(capacity, now)).tryConsume(now);</span>
+    }
+
+    /** Elimina las cubetas que ya se recargaron por completo: equivalen a una cubeta nueva. */
+    void evictFullBuckets() {
+<span class="fc" id="L67">        Instant now = clock.instant();</span>
+<span class="fc" id="L68">        buckets.values().removeIf(b -&gt; b.isFull(now));</span>
+<span class="fc" id="L69">    }</span>
+
+    /** Número de claves con cubeta (para pruebas y métricas). */
+    int trackedKeys() {
+<span class="fc" id="L73">        return buckets.size();</span>
+    }
+
+    private final class Bucket {
+        private double tokens;
+        private Instant lastRefill;
+
+<span class="fc" id="L80">        Bucket(double tokens, Instant now) {</span>
+<span class="fc" id="L81">            this.tokens = tokens;</span>
+<span class="fc" id="L82">            this.lastRefill = now;</span>
+<span class="fc" id="L83">        }</span>
+
+        synchronized Decision tryConsume(Instant now) {
+<span class="fc" id="L86">            refill(now);</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            if (tokens &gt;= 1) {</span>
+<span class="fc" id="L88">                tokens -= 1;</span>
+<span class="fc" id="L89">                return new Decision(true, 0);</span>
+            }
+<span class="fc" id="L91">            long waitNanos = (long) Math.ceil((1 - tokens) * nanosPerToken);</span>
+<span class="fc" id="L92">            long seconds = Math.max(1, (long) Math.ceil(waitNanos / 1_000_000_000.0));</span>
+<span class="fc" id="L93">            return new Decision(false, seconds);</span>
+        }
+
+        synchronized boolean isFull(Instant now) {
+<span class="fc" id="L97">            refill(now);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            return tokens &gt;= capacity;</span>
+        }
+
+        private void refill(Instant now) {
+<span class="fc" id="L102">            long elapsed = Duration.between(lastRefill, now).toNanos();</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">            if (elapsed &gt; 0) {</span>
+<span class="fc" id="L104">                tokens = Math.min(capacity, tokens + elapsed / nanosPerToken);</span>
+<span class="fc" id="L105">                lastRefill = now;</span>
+            }
+<span class="fc" id="L107">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

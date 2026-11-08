@@ -1,0 +1,17 @@
+- Statistics
+================================================================================
+>> Line Coverage (for mutated classes only): 286/292 (98%)
+>> 20 tests examined
+>> Generated 129 mutations Killed 127 (98%)
+>> Mutations with no coverage 0. Test strength 98%
+>> Ran 175 tests (1.36 tests per mutation)
+Enhanced functionality available at https://www.arcmutate.com/
+
+Build messages:- 
+* Project uses Spring, but the Arcmutate Spring plugin is not present. (https://docs.arcmutate.com/docs/spring.html)
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  39.831 s
+[INFO] Finished at: 2026-11-07T20:18:35-06:00
+[INFO] ------------------------------------------------------------------------

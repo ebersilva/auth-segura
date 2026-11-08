@@ -1,0 +1,21 @@
+# Dependabot: PR automáticos con actualizaciones de seguridad y versiones.
+# Cada PR pasa por los mismos gates del pipeline (incluido Dependency Review).
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [dependencias, seguridad]
+    groups:
+      spring:
+        patterns: ["org.springframework*"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [ci, seguridad]

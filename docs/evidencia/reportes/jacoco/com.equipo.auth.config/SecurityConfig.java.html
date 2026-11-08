@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SecurityConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.config</a> &gt; <span class="el_source">SecurityConfig.java</span></div><h1>SecurityConfig.java</h1><pre class="source lang-java linenums">package com.equipo.auth.config;
+
+import com.equipo.auth.ratelimit.RateLimitFilter;
+import com.equipo.auth.ratelimit.RateLimiter;
+import com.equipo.auth.security.ProblemAccessDeniedHandler;
+import com.equipo.auth.security.ProblemAuthenticationEntryPoint;
+import com.equipo.auth.security.RequestSizeFilter;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+/**
+ * Cadena de seguridad HTTP.
+ *
+ * &lt;ul&gt;
+ *   &lt;li&gt;Denegar por defecto: solo register, login y refresh son públicos.&lt;/li&gt;
+ *   &lt;li&gt;Sesión STATELESS: no hay cookie de sesión; la identidad viaja en el access token.&lt;/li&gt;
+ *   &lt;li&gt;CSRF deshabilitado: el ataque CSRF explota credenciales que el navegador envía solo
+ *       (cookies); un bearer token en la cabecera {@code Authorization} no se envía automáticamente.&lt;/li&gt;
+ *   &lt;li&gt;Cabeceras: CSP restrictiva, HSTS, nosniff, frame DENY, Referrer-Policy y Permissions-Policy.&lt;/li&gt;
+ *   &lt;li&gt;Filtros propios antes de la autenticación: tamaño de cuerpo y rate limiting por IP.&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+@Configuration
+<span class="fc" id="L39">public class SecurityConfig {</span>
+
+    private static final long HSTS_MAX_AGE_SECONDS = 31_536_000;
+
+    /** Cadena de filtros de seguridad. */
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+            @Qualifier(&quot;ipRateLimiter&quot;) RateLimiter ipRateLimiter, HttpSecurityProperties httpProps) {
+<span class="fc" id="L47">        ProblemAuthenticationEntryPoint entryPoint = new ProblemAuthenticationEntryPoint();</span>
+<span class="fc" id="L48">        ProblemAccessDeniedHandler deniedHandler = new ProblemAccessDeniedHandler();</span>
+<span class="fc" id="L49">        http</span>
+                // API stateless con bearer token: no hay cookies que un sitio externo pueda reutilizar
+<span class="fc" id="L51">                .csrf(csrf -&gt; csrf.disable())</span>
+<span class="fc" id="L52">                .cors(Customizer.withDefaults())</span>
+<span class="fc" id="L53">                .sessionManagement(s -&gt; s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
+<span class="fc" id="L54">                .formLogin(form -&gt; form.disable())</span>
+<span class="fc" id="L55">                .httpBasic(basic -&gt; basic.disable())</span>
+<span class="fc" id="L56">                .logout(logout -&gt; logout.disable())</span>
+<span class="fc" id="L57">                .authorizeHttpRequests(auth -&gt; auth</span>
+<span class="fc" id="L58">                        .requestMatchers(HttpMethod.POST, &quot;/api/auth/register&quot;, &quot;/api/auth/login&quot;,</span>
+<span class="fc" id="L59">                                &quot;/api/auth/refresh&quot;).permitAll()</span>
+<span class="fc" id="L60">                        .requestMatchers(&quot;/error&quot;).permitAll()</span>
+<span class="fc" id="L61">                        .anyRequest().authenticated())</span>
+<span class="fc" id="L62">                .oauth2ResourceServer(rs -&gt; rs</span>
+<span class="fc" id="L63">                        .jwt(jwt -&gt; jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))</span>
+<span class="fc" id="L64">                        .authenticationEntryPoint(entryPoint)</span>
+<span class="fc" id="L65">                        .accessDeniedHandler(deniedHandler))</span>
+<span class="fc" id="L66">                .exceptionHandling(ex -&gt; ex.authenticationEntryPoint(entryPoint).accessDeniedHandler(deniedHandler))</span>
+<span class="fc" id="L67">                .headers(h -&gt; h</span>
+<span class="fc" id="L68">                        .contentSecurityPolicy(csp -&gt; csp.policyDirectives(</span>
+                                &quot;default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'&quot;))
+<span class="fc" id="L70">                        .frameOptions(f -&gt; f.deny())</span>
+<span class="fc" id="L71">                        .httpStrictTransportSecurity(hsts -&gt; hsts.includeSubDomains(true)</span>
+<span class="fc" id="L72">                                .maxAgeInSeconds(HSTS_MAX_AGE_SECONDS))</span>
+<span class="fc" id="L73">                        .referrerPolicy(r -&gt; r.policy(ReferrerPolicy.NO_REFERRER))</span>
+<span class="fc" id="L74">                        .xssProtection(x -&gt; x.headerValue(HeaderValue.DISABLED))</span>
+<span class="fc" id="L75">                        .permissionsPolicyHeader(p -&gt; p.policy(&quot;geolocation=(), camera=(), microphone=()&quot;)))</span>
+<span class="fc" id="L76">                .addFilterBefore(new RequestSizeFilter(httpProps.maxBodyBytes()), BearerTokenAuthenticationFilter.class)</span>
+<span class="fc" id="L77">                .addFilterBefore(new RateLimitFilter(ipRateLimiter), RequestSizeFilter.class);</span>
+<span class="fc" id="L78">        return http.build();</span>
+    }
+
+    /** Convierte el claim {@code roles} en autoridades {@code ROLE_*}. */
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+<span class="fc" id="L84">        JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();</span>
+<span class="fc" id="L85">        authorities.setAuthoritiesClaimName(&quot;roles&quot;);</span>
+<span class="fc" id="L86">        authorities.setAuthorityPrefix(&quot;ROLE_&quot;);</span>
+<span class="fc" id="L87">        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();</span>
+<span class="fc" id="L88">        converter.setJwtGrantedAuthoritiesConverter(authorities);</span>
+<span class="fc" id="L89">        return converter;</span>
+    }
+
+    /** CORS solo para los orígenes configurados; nunca {@code *}. */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource(HttpSecurityProperties httpProps) {
+<span class="fc" id="L95">        CorsConfiguration config = new CorsConfiguration();</span>
+<span class="fc" id="L96">        config.setAllowedOrigins(httpProps.corsAllowedOrigins());</span>
+<span class="fc" id="L97">        config.setAllowedMethods(List.of(&quot;GET&quot;, &quot;POST&quot;));</span>
+<span class="fc" id="L98">        config.setAllowedHeaders(List.of(&quot;Authorization&quot;, &quot;Content-Type&quot;));</span>
+<span class="fc" id="L99">        config.setAllowCredentials(false);</span>
+<span class="fc" id="L100">        config.setMaxAge(3600L);</span>
+<span class="fc" id="L101">        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();</span>
+<span class="fc" id="L102">        source.registerCorsConfiguration(&quot;/api/**&quot;, config);</span>
+<span class="fc" id="L103">        return source;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

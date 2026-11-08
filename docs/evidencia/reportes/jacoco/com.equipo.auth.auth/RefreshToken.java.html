@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RefreshToken.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.auth</a> &gt; <span class="el_source">RefreshToken.java</span></div><h1>RefreshToken.java</h1><pre class="source lang-java linenums">package com.equipo.auth.auth;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * Refresh token persistido. Solo se guarda el SHA-256 del valor; el valor en claro únicamente lo
+ * recibe el cliente. Todos los tokens rotados a partir del mismo login comparten {@code familyId}.
+ */
+@Entity
+@Table(name = &quot;refresh_tokens&quot;, indexes = {
+    @Index(name = &quot;idx_refresh_family&quot;, columnList = &quot;familyId&quot;),
+    @Index(name = &quot;idx_refresh_user&quot;, columnList = &quot;userId&quot;)
+})
+public class RefreshToken {
+
+    @Id
+    private UUID id;
+
+    @Column(nullable = false, unique = true, length = 64)
+    private String tokenHash;
+
+    @Column(nullable = false)
+    private UUID userId;
+
+    @Column(nullable = false)
+    private UUID familyId;
+
+    @Column(nullable = false)
+    private Instant expiresAt;
+
+    private Instant revokedAt;
+
+    @Column(nullable = false)
+    private Instant createdAt;
+
+    /** Bloqueo optimista: de dos rotaciones simultáneas del mismo token solo una se confirma. */
+    @Version
+    private long version;
+
+<span class="fc" id="L47">    protected RefreshToken() {</span>
+        // requerido por JPA
+<span class="fc" id="L49">    }</span>
+
+    /**
+     * Crea un refresh token vigente.
+     *
+     * @param tokenHash SHA-256 (hex) del valor entregado al cliente
+     * @param userId    dueño
+     * @param familyId  familia de rotación
+     * @param createdAt instante de emisión
+     * @param expiresAt instante de expiración
+     */
+<span class="fc" id="L60">    public RefreshToken(String tokenHash, UUID userId, UUID familyId, Instant createdAt, Instant expiresAt) {</span>
+<span class="fc" id="L61">        this.id = UUID.randomUUID();</span>
+<span class="fc" id="L62">        this.tokenHash = tokenHash;</span>
+<span class="fc" id="L63">        this.userId = userId;</span>
+<span class="fc" id="L64">        this.familyId = familyId;</span>
+<span class="fc" id="L65">        this.createdAt = createdAt;</span>
+<span class="fc" id="L66">        this.expiresAt = expiresAt;</span>
+<span class="fc" id="L67">    }</span>
+
+    /** Indica si ya fue usado o revocado. */
+    public boolean isRevoked() {
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        return revokedAt != null;</span>
+    }
+
+    /** Indica si expiró en el instante dado. */
+    public boolean isExpired(Instant now) {
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        return !now.isBefore(expiresAt);</span>
+    }
+
+    /** Marca el token como usado/revocado. */
+    public void revoke(Instant now) {
+<span class="fc" id="L81">        this.revokedAt = now;</span>
+<span class="fc" id="L82">    }</span>
+
+    public UUID getId() {
+<span class="fc" id="L85">        return id;</span>
+    }
+
+    public String getTokenHash() {
+<span class="fc" id="L89">        return tokenHash;</span>
+    }
+
+    public UUID getUserId() {
+<span class="fc" id="L93">        return userId;</span>
+    }
+
+    public UUID getFamilyId() {
+<span class="fc" id="L97">        return familyId;</span>
+    }
+
+    public Instant getExpiresAt() {
+<span class="fc" id="L101">        return expiresAt;</span>
+    }
+
+    public Instant getRevokedAt() {
+<span class="fc" id="L105">        return revokedAt;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

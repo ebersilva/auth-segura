@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RateLimitFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.ratelimit</a> &gt; <span class="el_source">RateLimitFilter.java</span></div><h1>RateLimitFilter.java</h1><pre class="source lang-java linenums">package com.equipo.auth.ratelimit;
+
+import com.equipo.auth.common.LogSanitizer;
+import com.equipo.auth.common.error.ProblemJson;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+/**
+ * Limita por IP las peticiones a {@code /api/auth/**}, antes de la autenticación y del parseo del cuerpo.
+ *
+ * &lt;p&gt;La IP es {@code request.getRemoteAddr()}. No se usa {@code X-Forwarded-For}: el cliente puede
+ * falsificarlo para obtener una cubeta nueva en cada petición. Detrás de un proxy de confianza se
+ * configura {@code server.forward-headers-strategy=native} para que el contenedor resuelva la IP real.
+ */
+public class RateLimitFilter extends OncePerRequestFilter {
+
+<span class="fc" id="L24">    private static final Logger LOG = LoggerFactory.getLogger(RateLimitFilter.class);</span>
+    private static final String PROTECTED_PREFIX = &quot;/api/auth/&quot;;
+
+    private final RateLimiter ipRateLimiter;
+
+<span class="fc" id="L29">    public RateLimitFilter(RateLimiter ipRateLimiter) {</span>
+<span class="fc" id="L30">        this.ipRateLimiter = ipRateLimiter;</span>
+<span class="fc" id="L31">    }</span>
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        return !request.getRequestURI().startsWith(PROTECTED_PREFIX);</span>
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+<span class="fc" id="L41">        RateLimiter.Decision decision = ipRateLimiter.tryAcquire(&quot;ip:&quot; + request.getRemoteAddr());</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (decision.allowed()) {</span>
+<span class="fc" id="L43">            chain.doFilter(request, response);</span>
+<span class="fc" id="L44">            return;</span>
+        }
+<span class="fc" id="L46">        LOG.warn(&quot;SECURITY ip_rate_limited ip={}&quot;, LogSanitizer.safe(request.getRemoteAddr()));</span>
+<span class="fc" id="L47">        response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(decision.retryAfterSeconds()));</span>
+<span class="fc" id="L48">        ProblemJson.write(response, 429, &quot;Too Many Requests&quot;,</span>
+<span class="fc" id="L49">                &quot;Demasiadas solicitudes. Intenta de nuevo más tarde&quot;, request.getRequestURI());</span>
+<span class="fc" id="L50">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

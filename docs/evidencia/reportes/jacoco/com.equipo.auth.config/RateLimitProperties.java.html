@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RateLimitProperties.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.config</a> &gt; <span class="el_source">RateLimitProperties.java</span></div><h1>RateLimitProperties.java</h1><pre class="source lang-java linenums">package com.equipo.auth.config;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import java.time.Duration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
+
+/**
+ * Políticas de rate limiting ({@code auth.rate-limit.*}).
+ *
+ * @param ipCapacity         peticiones por IP a {@code /api/auth/**} por periodo
+ * @param ipRefillPeriod     periodo en el que se recarga la capacidad por IP
+ * @param loginCapacity      intentos de login por usuario por periodo
+ * @param loginRefillPeriod  periodo en el que se recarga la capacidad por usuario
+ */
+@Validated
+@ConfigurationProperties(&quot;auth.rate-limit&quot;)
+<span class="fc" id="L19">public record RateLimitProperties(</span>
+        @Min(1) int ipCapacity,
+        @NotNull Duration ipRefillPeriod,
+        @Min(1) int loginCapacity,
+        @NotNull Duration loginRefillPeriod) {
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

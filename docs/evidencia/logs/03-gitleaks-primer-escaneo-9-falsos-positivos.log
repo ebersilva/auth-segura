@@ -1,0 +1,89 @@
+Trying to pull docker.io/zricethezav/gitleaks:v8.30.1...
+Getting image source signatures
+Copying blob sha256:a43ab0c74cc473a4a21aa8a96c5344aa73eb3f338ddcae076a569121aecb462e
+Copying blob sha256:d49a2dee86fb12766dd648402d010ca105846a41bd58738454e53780d4bb8e97
+Copying blob sha256:d92b655ae8e277d674982248e489a6ecdfaa012c8cf0005f0c1aedd1638e522a
+Copying blob sha256:61fdfd7c017596d0815635bb8ae7dff0221723c481f12f265c9a9c91a3fe03ad
+Copying config sha256:4b81af4c7b4159acfdbbbfede6647bf49b4c9f24dc2a2bbd4581f39d5223fcfa
+Writing manifest to image destination
+
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+Finding:     ...nService : SECURITY refresh_token_reuse user=REDACTED family=0b668b40-e29...
+Secret:      REDACTED
+RuleID:      generic-api-key
+Entropy:     3.863826
+File:        /repo/docs/evidencia/logs/05-eventos-de-seguridad-en-logs.log
+Line:        1
+Fingerprint: /repo/docs/evidencia/logs/05-eventos-de-seguridad-en-logs.log:generic-api-key:1
+
+Finding:     ...nService : SECURITY refresh_token_reuse user=REDACTED family=f7a3d0cf-7aa...
+Secret:      REDACTED
+RuleID:      generic-api-key
+Entropy:     3.705229
+File:        /repo/docs/evidencia/logs/05-eventos-de-seguridad-en-logs.log
+Line:        12
+Fingerprint: /repo/docs/evidencia/logs/05-eventos-de-seguridad-en-logs.log:generic-api-key:12
+
+Finding:     ...", "letmein12345", "password12345", "REDACTED");
+Secret:      REDACTED
+RuleID:      generic-api-key
+Entropy:     3.584963
+File:        /repo/src/main/java/com/equipo/auth/auth/PasswordPolicy.java
+Line:        19
+Fingerprint: /repo/src/main/java/com/equipo/auth/auth/PasswordPolicy.java:generic-api-key:19
+
+Finding:     ...static final String PASSWORD = "REDACTED"
+Secret:      REDACTED
+RuleID:      generic-api-key
+Entropy:     3.602317
+File:        /repo/src/test/java/com/equipo/auth/support/AbstractApiTest.java
+Line:        25
+Fingerprint: /repo/src/test/java/com/equipo/auth/support/AbstractApiTest.java:generic-api-key:25
+
+Finding:     ...ervice   : SECURITY refresh_token_reuse user=REDACTED family=ef6dec6c-237...
+Secret:      REDACTED
+RuleID:      generic-api-key
+Entropy:     3.527719
+File:        /repo/target/surefire-reports/TEST-com.equipo.auth.auth.RefreshTokenServiceTest.xml
+Line:        68
+Fingerprint: /repo/target/surefire-reports/TEST-com.equipo.auth.auth.RefreshTokenServiceTest.xml:generic-api-key:68
+
+Finding:     ...ervice   : SECURITY refresh_token_reuse user=REDACTED family=221dc2cf-863...
+Secret:      REDACTED
+RuleID:      generic-api-key
+Entropy:     3.694386
+File:        /repo/target/surefire-reports/TEST-com.equipo.auth.auth.AuthFlowIntegrationTest.xml
+Line:        112
+Fingerprint: /repo/target/surefire-reports/TEST-com.equipo.auth.auth.AuthFlowIntegrationTest.xml:generic-api-key:112
+
+Finding:     ...ervice   : SECURITY refresh_token_reuse user=REDACTED family=ec917902-79b...
+Secret:      REDACTED
+RuleID:      generic-api-key
+Entropy:     3.884795
+File:        /repo/target/surefire-reports/TEST-com.equipo.auth.security.RefreshTokenReuseSecurityTest.xml
+Line:        76
+Fingerprint: /repo/target/surefire-reports/TEST-com.equipo.auth.security.RefreshTokenReuseSecurityTest.xml:generic-api-key:76
+
+Finding:     ...ervice   : SECURITY refresh_token_reuse user=REDACTED family=ec917902-79b...
+Secret:      REDACTED
+RuleID:      generic-api-key
+Entropy:     3.884795
+File:        /repo/target/surefire-reports/TEST-com.equipo.auth.security.RefreshTokenReuseSecurityTest.xml
+Line:        77
+Fingerprint: /repo/target/surefire-reports/TEST-com.equipo.auth.security.RefreshTokenReuseSecurityTest.xml:generic-api-key:77
+
+Finding:     ...ervice   : SECURITY refresh_token_reuse user=REDACTED family=8a71b30f-f96...
+Secret:      REDACTED
+RuleID:      generic-api-key
+Entropy:     3.798145
+File:        /repo/target/surefire-reports/TEST-com.equipo.auth.security.RefreshTokenReuseSecurityTest.xml
+Line:        81
+Fingerprint: /repo/target/surefire-reports/TEST-com.equipo.auth.security.RefreshTokenReuseSecurityTest.xml:generic-api-key:81
+
+2:14AM INF scanned ~5660155 bytes (5.66 MB) in 993ms
+2:14AM WRN leaks found: 9

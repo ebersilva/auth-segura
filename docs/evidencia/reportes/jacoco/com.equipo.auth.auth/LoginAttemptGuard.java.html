@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginAttemptGuard.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.auth</a> &gt; <span class="el_source">LoginAttemptGuard.java</span></div><h1>LoginAttemptGuard.java</h1><pre class="source lang-java linenums">package com.equipo.auth.auth;
+
+import com.equipo.auth.common.LogSanitizer;
+import com.equipo.auth.config.LockoutProperties;
+import com.equipo.auth.ratelimit.RateLimitExceededException;
+import com.equipo.auth.ratelimit.RateLimiter;
+import com.equipo.auth.ratelimit.RateLimiter.Decision;
+import com.equipo.auth.user.User;
+import java.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+/**
+ * Defensas contra fuerza bruta en el login: límite por usuario, bloqueo de cuenta e igualación de
+ * tiempos de respuesta.
+ */
+@Component
+public class LoginAttemptGuard {
+
+<span class="fc" id="L23">    private static final Logger LOG = LoggerFactory.getLogger(LoginAttemptGuard.class);</span>
+
+    private final RateLimiter loginRateLimiter;
+    private final LockoutProperties lockout;
+    private final PasswordEncoder passwordEncoder;
+    /** Hash de un valor aleatorio: verificar contra él cuesta lo mismo que verificar una contraseña real. */
+    private final String dummyHash;
+
+    /** Crea el guardián y calcula una vez el hash ficticio. */
+    public LoginAttemptGuard(@Qualifier(&quot;loginRateLimiter&quot;) RateLimiter loginRateLimiter, LockoutProperties lockout,
+<span class="fc" id="L33">            PasswordEncoder passwordEncoder, TokenHasher hasher) {</span>
+<span class="fc" id="L34">        this.loginRateLimiter = loginRateLimiter;</span>
+<span class="fc" id="L35">        this.lockout = lockout;</span>
+<span class="fc" id="L36">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L37">        this.dummyHash = passwordEncoder.encode(hasher.newToken());</span>
+<span class="fc" id="L38">    }</span>
+
+    /**
+     * Consume un intento del usuario.
+     *
+     * @param username usuario normalizado
+     * @throws RateLimitExceededException si superó la capacidad del periodo
+     */
+    public void checkRateLimit(String username) {
+<span class="fc" id="L47">        Decision decision = loginRateLimiter.tryAcquire(&quot;login:&quot; + username);</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (!decision.allowed()) {</span>
+<span class="fc" id="L49">            LOG.warn(&quot;SECURITY login_rate_limited user={} retry_after={}&quot;, LogSanitizer.safe(username),</span>
+<span class="fc" id="L50">                    decision.retryAfterSeconds());</span>
+<span class="fc" id="L51">            throw new RateLimitExceededException(decision.retryAfterSeconds());</span>
+        }
+<span class="fc" id="L53">    }</span>
+
+    /** Ejecuta una verificación Argon2 completa sin resultado útil (usuario inexistente o bloqueado). */
+    public void spendEquivalentTime(String password) {
+<span class="fc" id="L57">        passwordEncoder.matches(password, dummyHash);</span>
+<span class="fc" id="L58">    }</span>
+
+    /**
+     * Registra un fallo y aplica el bloqueo si corresponde.
+     *
+     * @param user usuario
+     * @param now  instante actual
+     * @return {@code true} si la cuenta quedó bloqueada con este intento
+     */
+    public boolean registerFailure(User user, Instant now) {
+<span class="fc" id="L68">        return user.registerFailedLogin(now, lockout.maxFailedAttempts(), lockout.duration());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

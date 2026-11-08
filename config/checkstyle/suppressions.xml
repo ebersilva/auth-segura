@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+    <!-- Las clases de test no requieren Javadoc de tipo -->
+    <suppress checks="MissingJavadocType" files="[\\/]src[\\/]test[\\/]"/>
+    <!-- La clase main de Spring Boot no puede tener constructor privado -->
+    <suppress checks="HideUtilityClassConstructor" files="AuthSeguraApplication\.java"/>
+</suppressions>

@@ -1,0 +1,49 @@
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.403 s -- in com.equipo.auth.auth.AuthFlowIntegrationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.459 s -- in com.equipo.auth.auth.AuthServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.equipo.auth.auth.LoginAttemptGuardTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.053 s -- in com.equipo.auth.auth.PasswordPolicyTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.108 s -- in com.equipo.auth.auth.RefreshConcurrencyIntegrationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.110 s -- in com.equipo.auth.auth.RefreshTokenServiceTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.050 s -- in com.equipo.auth.auth.RegisterRequestTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.equipo.auth.auth.RegistrationServiceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.equipo.auth.auth.TokenHasherTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.equipo.auth.security.AccessTokenDenylistTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.equipo.auth.security.AccessTokenValidatorsTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.898 s -- in com.equipo.auth.security.BruteForceSecurityTest
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.817 s -- in com.equipo.auth.security.InjectionAndXssSecurityTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.451 s -- in com.equipo.auth.security.JwtSecurityTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.214 s -- in com.equipo.auth.security.RefreshTokenReuseSecurityTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.equipo.auth.common.ProblemJsonTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.equipo.auth.config.JwtPropertiesTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.133 s -- in com.equipo.auth.config.PasswordConfigTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.662 s -- in com.equipo.auth.config.StartupWithoutSecretTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.equipo.auth.ratelimit.RateLimiterTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.equipo.auth.user.UserTest
+[INFO] Tests run: 147, Failures: 0, Errors: 0, Skipped: 0
+[INFO] All coverage checks have been met.
+[INFO] BugInstance size is 23
+[INFO] Total bugs: 23
+[ERROR] Low: com.equipo.auth.auth.AuthController is a Spring endpoint (Controller) [com.equipo.auth.auth.AuthController] At AuthController.java:[line 38] SPRING_ENDPOINT
+[ERROR] Low: com.equipo.auth.auth.AuthController is a Spring endpoint (Controller) [com.equipo.auth.auth.AuthController] At AuthController.java:[lines 50-51] SPRING_ENDPOINT
+[ERROR] Low: com.equipo.auth.auth.AuthController is a Spring endpoint (Controller) [com.equipo.auth.auth.AuthController] At AuthController.java:[line 44] SPRING_ENDPOINT
+[ERROR] Low: com.equipo.auth.auth.AuthController is a Spring endpoint (Controller) [com.equipo.auth.auth.AuthController] At AuthController.java:[lines 31-32] SPRING_ENDPOINT
+[ERROR] Low: This use of org/slf4j/Logger.warn(Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V might be used to include CRLF characters into log messages [com.equipo.auth.auth.AuthService, com.equipo.auth.auth.AuthService, com.equipo.auth.auth.LoginRequest] At AuthService.java:[line 61]At AuthService.java:[line 61]At LoginRequest.java:[line 14] CRLF_INJECTION_LOGS
+[ERROR] Low: This use of org/slf4j/Logger.warn(Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V might be used to include CRLF characters into log messages [com.equipo.auth.auth.AuthService, com.equipo.auth.auth.AuthService, com.equipo.auth.user.User] At AuthService.java:[line 68]At AuthService.java:[line 68]At User.java:[line 107] CRLF_INJECTION_LOGS
+[ERROR] Low: This use of org/slf4j/Logger.info(Ljava/lang/String;Ljava/lang/Object;)V might be used to include CRLF characters into log messages [com.equipo.auth.auth.AuthService, com.equipo.auth.auth.AuthService, com.equipo.auth.user.User] At AuthService.java:[line 73]At AuthService.java:[line 73]At User.java:[line 107] CRLF_INJECTION_LOGS
+[ERROR] Low: This use of org/slf4j/Logger.info(Ljava/lang/String;Ljava/lang/Object;)V might be used to include CRLF characters into log messages [com.equipo.auth.auth.AuthService] At AuthService.java:[line 100] CRLF_INJECTION_LOGS
+[ERROR] Medium: Possible null pointer dereference in com.equipo.auth.auth.AuthService.logout(Jwt, RefreshRequest) due to return value of called method [com.equipo.auth.auth.AuthService, com.equipo.auth.auth.AuthService] Method invoked at AuthService.java:[line 99]Known null at AuthService.java:[line 99] NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE
+[ERROR] Medium: Possible null pointer dereference in com.equipo.auth.auth.AuthService.logout(Jwt, RefreshRequest) due to return value of called method [com.equipo.auth.auth.AuthService, com.equipo.auth.auth.AuthService] Method invoked at AuthService.java:[line 99]Known null at AuthService.java:[line 99] NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE
+[ERROR] Medium: Possible null pointer dereference in com.equipo.auth.auth.AuthService.logout(Jwt, RefreshRequest) due to return value of called method [com.equipo.auth.auth.AuthService, com.equipo.auth.auth.AuthService] Method invoked at AuthService.java:[line 98]Known null at AuthService.java:[line 98] NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE
+[ERROR] Low: This use of org/slf4j/Logger.warn(Ljava/lang/String;[Ljava/lang/Object;)V might be used to include CRLF characters into log messages [com.equipo.auth.auth.RefreshTokenService, com.equipo.auth.auth.RefreshToken, com.equipo.auth.auth.RefreshToken, com.equipo.auth.auth.RefreshTokenService] At RefreshTokenService.java:[line 78]At RefreshToken.java:[line 93]At RefreshToken.java:[line 97]At RefreshTokenService.java:[line 79] CRLF_INJECTION_LOGS
+[ERROR] Low: This use of org/slf4j/Logger.info(Ljava/lang/String;Ljava/lang/Object;)V might be used to include CRLF characters into log messages [com.equipo.auth.auth.RegistrationService, com.equipo.auth.auth.RegistrationService, com.equipo.auth.user.User] At RegistrationService.java:[line 55]At RegistrationService.java:[line 55]At User.java:[line 107] CRLF_INJECTION_LOGS
+[ERROR] Medium: This use of java/io/PrintWriter.write(Ljava/lang/String;)V could be vulnerable to XSS in the Servlet [com.equipo.auth.common.error.ProblemJson] At ProblemJson.java:[line 37] XSS_SERVLET
+[ERROR] Medium: com.equipo.auth.config.HttpSecurityProperties.corsAllowedOrigins() may expose internal representation by returning HttpSecurityProperties.corsAllowedOrigins [com.equipo.auth.config.HttpSecurityProperties] At HttpSecurityProperties.java:[line 15] EI_EXPOSE_REP
+[ERROR] Medium: new com.equipo.auth.config.HttpSecurityProperties(List, int) may expose internal representation by storing an externally mutable object into HttpSecurityProperties.corsAllowedOrigins [com.equipo.auth.config.HttpSecurityProperties] At HttpSecurityProperties.java:[line 17] EI_EXPOSE_REP2
+[ERROR] High: Disabling Spring Security's CSRF protection is unsafe for standard web applications [com.equipo.auth.config.SecurityConfig] At SecurityConfig.java:[line 51] SPRING_CSRF_PROTECTION_DISABLED
+[ERROR] Low: This use of org/slf4j/Logger.warn(Ljava/lang/String;Ljava/lang/Object;)V might be used to include CRLF characters into log messages [com.equipo.auth.ratelimit.RateLimitFilter] At RateLimitFilter.java:[line 45] CRLF_INJECTION_LOGS
+[ERROR] Medium: Exception thrown in class com.equipo.auth.ratelimit.RateLimiter at new com.equipo.auth.ratelimit.RateLimiter(int, Duration, Clock) will leave the constructor. The object under construction remains partially initialized and may be vulnerable to Finalizer attacks. [com.equipo.auth.ratelimit.RateLimiter, com.equipo.auth.ratelimit.RateLimiter] At RateLimiter.java:[line 35]At RateLimiter.java:[line 35] CT_CONSTRUCTOR_THROW
+[ERROR] Low: Request header can easily be altered by the client [com.equipo.auth.security.ProblemAuthenticationEntryPoint] At ProblemAuthenticationEntryPoint.java:[line 20] SERVLET_HEADER
+[ERROR] Low: Request header can easily be altered by the client [com.equipo.auth.security.RequestSizeFilter] At RequestSizeFilter.java:[line 34] SERVLET_HEADER
+[ERROR] Medium: Possible null pointer dereference in com.equipo.auth.user.UserController.me(Jwt) due to return value of called method [com.equipo.auth.user.UserController, com.equipo.auth.user.UserController] Method invoked at UserController.java:[line 31]Known null at UserController.java:[line 31] NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE
+[ERROR] Low: com.equipo.auth.user.UserController is a Spring endpoint (Controller) [com.equipo.auth.user.UserController] At UserController.java:[line 31] SPRING_ENDPOINT
+[ERROR] BUILD FAILURE

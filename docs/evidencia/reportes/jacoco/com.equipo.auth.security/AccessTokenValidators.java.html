@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccessTokenValidators.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.security</a> &gt; <span class="el_source">AccessTokenValidators.java</span></div><h1>AccessTokenValidators.java</h1><pre class="source lang-java linenums">package com.equipo.auth.security;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jwt.Jwt;
+
+/** Validadores adicionales de claims para los access tokens. */
+public final class AccessTokenValidators {
+
+    private AccessTokenValidators() {
+    }
+
+    /** Exige que {@code aud} contenga la audiencia de esta API. */
+    public static OAuth2TokenValidator&lt;Jwt&gt; audience(String expected) {
+<span class="fc" id="L20">        return jwt -&gt; {</span>
+<span class="fc" id="L21">            List&lt;String&gt; aud = jwt.getAudience();</span>
+<span class="fc bfc" id="L22" title="All 4 branches covered.">            return aud != null &amp;&amp; aud.contains(expected) ? OAuth2TokenValidatorResult.success()</span>
+<span class="fc" id="L23">                    : failure(&quot;Audiencia inválida&quot;);</span>
+        };
+    }
+
+    /** Exige los claims {@code sub}, {@code jti} e {@code iat}. */
+    public static OAuth2TokenValidator&lt;Jwt&gt; requiredClaims() {
+<span class="fc bfc" id="L29" title="All 6 branches covered.">        return jwt -&gt; jwt.getSubject() != null &amp;&amp; jwt.getId() != null &amp;&amp; jwt.getIssuedAt() != null</span>
+<span class="fc" id="L30">                ? OAuth2TokenValidatorResult.success() : failure(&quot;Faltan claims obligatorios&quot;);</span>
+    }
+
+    /**
+     * Exige que el instante actual sea estrictamente anterior a {@code exp} (RFC 7519 §4.1.4).
+     *
+     * &lt;p&gt;{@code JwtTimestampValidator} de Spring acepta el token en el instante exacto de {@code exp}
+     * (compara con {@code isAfter}); este validador cierra ese margen.
+     */
+    public static OAuth2TokenValidator&lt;Jwt&gt; strictExpiry(Clock clock) {
+<span class="fc" id="L40">        return jwt -&gt; {</span>
+<span class="fc" id="L41">            Instant exp = jwt.getExpiresAt();</span>
+<span class="fc bfc" id="L42" title="All 4 branches covered.">            return exp != null &amp;&amp; clock.instant().isBefore(exp) ? OAuth2TokenValidatorResult.success()</span>
+<span class="fc" id="L43">                    : failure(&quot;Token expirado&quot;);</span>
+        };
+    }
+
+    /** Rechaza tokens revocados por logout. */
+    public static OAuth2TokenValidator&lt;Jwt&gt; notRevoked(AccessTokenDenylist denylist) {
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        return jwt -&gt; denylist.isRevoked(jwt.getId()) ? failure(&quot;Token revocado&quot;)</span>
+<span class="fc" id="L50">                : OAuth2TokenValidatorResult.success();</span>
+    }
+
+    private static OAuth2TokenValidatorResult failure(String description) {
+<span class="fc" id="L54">        return OAuth2TokenValidatorResult.failure(new OAuth2Error(OAuth2ErrorCodes.INVALID_TOKEN, description, null));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

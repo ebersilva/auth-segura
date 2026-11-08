@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JwtProperties.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.config</a> &gt; <span class="el_source">JwtProperties.java</span></div><h1>JwtProperties.java</h1><pre class="source lang-java linenums">package com.equipo.auth.config;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import java.time.Duration;
+import java.util.Base64;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
+
+/**
+ * Configuración de los tokens JWT ({@code auth.jwt.*}).
+ *
+ * @param secret          clave HMAC en Base64 (variable de entorno {@code JWT_SECRET}), mínimo 256 bits
+ * @param issuer          emisor ({@code iss}) que se escribe y se exige al validar
+ * @param audience        audiencia ({@code aud}) que se escribe y se exige al validar
+ * @param accessTokenTtl  vigencia del access token
+ * @param refreshTokenTtl vigencia del refresh token
+ */
+@Validated
+@ConfigurationProperties(&quot;auth.jwt&quot;)
+<span class="fc" id="L23">public record JwtProperties(</span>
+        String secret,
+        @NotBlank String issuer,
+        @NotBlank String audience,
+        @NotNull Duration accessTokenTtl,
+        @NotNull Duration refreshTokenTtl) {
+
+    /** Longitud mínima de la clave HS256 (RFC 7518 §3.2): 256 bits. */
+    static final int MIN_SECRET_BYTES = 32;
+
+    /**
+     * Decodifica y valida la clave de firma.
+     *
+     * @return clave HMAC-SHA256
+     * @throws IllegalStateException si el secreto falta, no es Base64 o es menor a 256 bits;
+     *                               así la aplicación no arranca con una clave débil
+     */
+    public SecretKey secretKey() {
+<span class="fc bfc" id="L41" title="All 4 branches covered.">        if (secret == null || secret.isBlank()) {</span>
+<span class="fc" id="L42">            throw new IllegalStateException(&quot;Falta la variable de entorno JWT_SECRET (Base64, mínimo 256 bits)&quot;);</span>
+        }
+        byte[] bytes;
+        try {
+<span class="fc" id="L46">            bytes = Base64.getDecoder().decode(secret.strip());</span>
+<span class="fc" id="L47">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L48">            throw new IllegalStateException(&quot;JWT_SECRET no es Base64 válido&quot;, e);</span>
+<span class="fc" id="L49">        }</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (bytes.length &lt; MIN_SECRET_BYTES) {</span>
+<span class="fc" id="L51">            throw new IllegalStateException(&quot;JWT_SECRET debe tener al menos 256 bits&quot;);</span>
+        }
+<span class="fc" id="L53">        return new SecretKeySpec(bytes, &quot;HmacSHA256&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

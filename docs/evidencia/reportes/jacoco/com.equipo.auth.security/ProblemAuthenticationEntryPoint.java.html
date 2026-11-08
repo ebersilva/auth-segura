@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProblemAuthenticationEntryPoint.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.security</a> &gt; <span class="el_source">ProblemAuthenticationEntryPoint.java</span></div><h1>ProblemAuthenticationEntryPoint.java</h1><pre class="source lang-java linenums">package com.equipo.auth.security;
+
+import com.equipo.auth.common.error.ProblemJson;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.AuthenticationEntryPoint;
+
+/**
+ * Responde 401 en formato RFC 9457 y con {@code WWW-Authenticate: Bearer} (RFC 6750) cuando falta el
+ * token o no es válido. No incluye la causa concreta (firma, expiración, emisor) para no orientar al atacante.
+ */
+<span class="fc" id="L15">public class ProblemAuthenticationEntryPoint implements AuthenticationEntryPoint {</span>
+
+    @Override
+    public void commence(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationException authException) throws IOException {
+<span class="fc bfc" id="L20" title="All 2 branches covered.">        boolean tokenPresent = request.getHeader(HttpHeaders.AUTHORIZATION) != null;</span>
+<span class="fc" id="L21">        response.setHeader(HttpHeaders.WWW_AUTHENTICATE,</span>
+<span class="fc bfc" id="L22" title="All 2 branches covered.">                tokenPresent ? &quot;Bearer error=\&quot;invalid_token\&quot;&quot; : &quot;Bearer&quot;);</span>
+<span class="fc" id="L23">        ProblemJson.write(response, 401, &quot;Unauthorized&quot;, &quot;Se requiere un token de acceso válido&quot;,</span>
+<span class="fc" id="L24">                request.getRequestURI());</span>
+<span class="fc" id="L25">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

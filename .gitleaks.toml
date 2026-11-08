@@ -1,0 +1,15 @@
+# Configuración de Gitleaks (se detecta automáticamente en la raíz del repositorio).
+# Se conservan TODAS las reglas por defecto; solo se agregan excepciones puntuales y justificadas.
+title = "auth-segura"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Salida de compilación: no se versiona (.gitignore). Solo aplica al escaneo local en modo dir."
+paths = ['''(^|/)target/''']
+
+[[allowlists]]
+description = "Eventos de seguridad: user y family son UUID públicos, no secretos (la regla genérica ve 'token' + entropía)."
+regexTarget = "line"
+regexes = ['''SECURITY refresh_token_reuse user=[0-9a-f-]{36} family=[0-9a-f-]{36}''']

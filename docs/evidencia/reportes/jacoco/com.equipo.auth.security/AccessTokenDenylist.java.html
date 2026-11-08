@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccessTokenDenylist.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.security</a> &gt; <span class="el_source">AccessTokenDenylist.java</span></div><h1>AccessTokenDenylist.java</h1><pre class="source lang-java linenums">package com.equipo.auth.security;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.stereotype.Component;
+
+/**
+ * Access tokens revocados por logout antes de su expiración, identificados por {@code jti}.
+ *
+ * &lt;p&gt;Cada entrada se conserva solo hasta el {@code exp} del token (máx. 15 minutos), así que la
+ * memoria está acotada. Con varias instancias se movería a Redis con TTL.
+ */
+@Component
+public class AccessTokenDenylist {
+
+<span class="fc" id="L18">    private final Map&lt;String, Instant&gt; revoked = new ConcurrentHashMap&lt;&gt;();</span>
+    private final Clock clock;
+
+<span class="fc" id="L21">    public AccessTokenDenylist(Clock clock) {</span>
+<span class="fc" id="L22">        this.clock = clock;</span>
+<span class="fc" id="L23">    }</span>
+
+    /**
+     * Revoca un token hasta su expiración.
+     *
+     * @param jti       identificador del token
+     * @param expiresAt expiración del token
+     */
+    public void revoke(String jti, Instant expiresAt) {
+<span class="fc" id="L32">        purgeExpired();</span>
+<span class="fc" id="L33">        revoked.put(jti, expiresAt);</span>
+<span class="fc" id="L34">    }</span>
+
+    /** Indica si el {@code jti} está revocado. */
+    public boolean isRevoked(String jti) {
+<span class="fc bfc" id="L38" title="All 4 branches covered.">        return jti != null &amp;&amp; revoked.containsKey(jti);</span>
+    }
+
+    /** Elimina las entradas cuyo token ya expiró por sí mismo. */
+    void purgeExpired() {
+<span class="fc" id="L43">        Instant now = clock.instant();</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        revoked.values().removeIf(exp -&gt; !now.isBefore(exp));</span>
+<span class="fc" id="L45">    }</span>
+
+    /** Número de entradas vigentes (para pruebas). */
+    int size() {
+<span class="fc" id="L49">        return revoked.size();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

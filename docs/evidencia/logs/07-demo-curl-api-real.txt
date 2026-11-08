@@ -1,0 +1,69 @@
+
+$ Registro
+{"id":"2e593fea-e5d0-489e-9eb7-031578893bf8","username":"demo4230","email":"demo4230@ejemplo.com","displayName":"Eber Silva","role":"USER","createdAt":"2026-11-08T02:17:10.409Z"}
+→ HTTP 201
+
+$ Login
+{'accessToken': 'eyJ0eXAiOiJKV1QiLCJhbGciO…', 'tokenType': 'Bearer', 'expiresIn': 900, 'refreshToken': 'GsGzFdqho5OnHV3y6stBQttE4…', 'refreshExpiresIn': 604800}
+
+$ Perfil con access token
+{"id":"2e593fea-e5d0-489e-9eb7-031578893bf8","username":"demo4230","email":"demo4230@ejemplo.com","displayName":"Eber Silva","role":"USER","createdAt":"2026-11-08T02:17:10.409Z"}
+→ HTTP 200
+
+$ Refresh (rotación)
+nuevo refresh distinto del anterior: sí
+
+$ ATAQUE: reutilizar el refresh token anterior (robado)
+{"detail":"Token inválido, expirado o revocado","instance":"/api/auth/refresh","status":401,"title":"Unauthorized"}
+→ HTTP 401
+
+$ La familia quedó revocada: el refresh vigente tampoco sirve
+{"detail":"Token inválido, expirado o revocado","instance":"/api/auth/refresh","status":401,"title":"Unauthorized"}
+→ HTTP 401
+
+$ ATAQUE: inyección SQL en username
+{"detail":"La solicitud contiene datos inválidos","instance":"/api/auth/login","status":400,"title":"Bad Request","errors":[{"field":"username","message":"formato inválido"}]}
+→ HTTP 400
+
+$ ATAQUE: XSS en displayName
+{"detail":"La solicitud contiene datos inválidos","instance":"/api/auth/register","status":400,"title":"Bad Request","errors":[{"field":"displayName","message":"debe tener de 1 a 60 caracteres: letras, espacios, punto, apóstrofo o guion"}]}
+→ HTTP 400
+
+$ ATAQUE: mass assignment (role ADMIN)
+{"detail":"El cuerpo no es un JSON válido o contiene campos no permitidos","instance":"/api/auth/register","status":400,"title":"Bad Request"}
+→ HTTP 400
+
+$ ATAQUE: JWT con alg=none
+HTTP/1.1 401 
+WWW-Authenticate: Bearer error="invalid_token"
+{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Se requiere un token de acceso válido","instance":"/api/users/me"}
+→ HTTP 401
+
+$ Cabeceras de seguridad
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+X-Frame-Options: DENY
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'
+Referrer-Policy: no-referrer
+Permissions-Policy: geolocation=(), camera=(), microphone=()
+
+$ Logout (revoca la familia del refresh y el access token actual)
+
+→ HTTP 204
+
+$ El access token ya no sirve tras el logout (aunque no ha expirado)
+{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Se requiere un token de acceso válido","instance":"/api/users/me"}
+→ HTTP 401
+
+$ ATAQUE: fuerza bruta (8 intentos de login, límite 5/min por usuario)
+intento 1 → 401
+intento 2 → 401
+intento 3 → 401
+intento 4 → 429
+intento 5 → 429
+intento 6 → 429
+intento 7 → 429
+intento 8 → 429
+HTTP/1.1 429 
+Retry-After: 12

@@ -1,0 +1,21 @@
+2026-11-08T02:28:45Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-08T02:28:45Z	INFO	[misconfig] Misconfiguration scanning is enabled
+2026-11-08T02:28:45Z	INFO	[checks-client] Using existing checks from cache	path="/root/.cache/trivy/policy/content"
+2026-11-08T02:28:45Z	INFO	[secret] Secret scanning is enabled
+2026-11-08T02:28:45Z	INFO	[secret] If your scanning is slow, please try '--scanners vuln,misconfig' to disable secret scanning
+2026-11-08T02:28:45Z	INFO	[secret] Please see https://trivy.dev/docs/v0.76/guide/scanner/secret#recommendation for faster secret detection
+2026-11-08T02:28:45Z	INFO	Number of language-specific files	num=1
+2026-11-08T02:28:45Z	INFO	[pom] Detecting vulnerabilities...
+2026-11-08T02:28:45Z	INFO	Detected config files	num=0
+
+Report Summary
+
+┌─────────┬──────┬─────────────────┬─────────┬───────────────────┐
+│ Target  │ Type │ Vulnerabilities │ Secrets │ Misconfigurations │
+├─────────┼──────┼─────────────────┼─────────┼───────────────────┤
+│ pom.xml │ pom  │        0        │    -    │         -         │
+└─────────┴──────┴─────────────────┴─────────┴───────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+

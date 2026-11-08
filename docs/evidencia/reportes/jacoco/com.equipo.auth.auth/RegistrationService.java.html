@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegistrationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.auth</a> &gt; <span class="el_source">RegistrationService.java</span></div><h1>RegistrationService.java</h1><pre class="source lang-java linenums">package com.equipo.auth.auth;
+
+import com.equipo.auth.common.LogSanitizer;
+import com.equipo.auth.user.User;
+import com.equipo.auth.user.UserRepository;
+import com.equipo.auth.user.UserResponse;
+import java.time.Clock;
+import java.time.temporal.ChronoUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/** Alta de usuarios. */
+@Service
+public class RegistrationService {
+
+<span class="fc" id="L20">    private static final Logger LOG = LoggerFactory.getLogger(RegistrationService.class);</span>
+
+    private final UserRepository users;
+    private final PasswordEncoder passwordEncoder;
+    private final PasswordPolicy passwordPolicy;
+    private final Clock clock;
+
+    public RegistrationService(UserRepository users, PasswordEncoder passwordEncoder, PasswordPolicy passwordPolicy,
+<span class="fc" id="L28">            Clock clock) {</span>
+<span class="fc" id="L29">        this.users = users;</span>
+<span class="fc" id="L30">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L31">        this.passwordPolicy = passwordPolicy;</span>
+<span class="fc" id="L32">        this.clock = clock;</span>
+<span class="fc" id="L33">    }</span>
+
+    /**
+     * Registra un usuario con rol USER (el rol nunca viene del cliente).
+     *
+     * &lt;p&gt;{@code createdAt} se trunca a milisegundos: la base de datos no guarda nanosegundos y, sin
+     * truncar, la respuesta del registro y la de {@code /api/users/me} mostrarían instantes distintos.
+     *
+     * @param request datos validados por el esquema
+     * @return perfil creado
+     * @throws WeakPasswordException         si la contraseña no cumple la política
+     * @throws RegistrationConflictException si el usuario o el correo ya existen
+     */
+    @Transactional
+    public UserResponse register(RegisterRequest request) {
+<span class="fc" id="L48">        passwordPolicy.validate(request.password(), request.username());</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (users.existsByUsernameOrEmail(request.username(), request.email())) {</span>
+<span class="fc" id="L50">            throw new RegistrationConflictException();</span>
+        }
+<span class="fc" id="L52">        User user = new User(request.username(), request.email(), request.displayName(),</span>
+<span class="fc" id="L53">                passwordEncoder.encode(request.password()), clock.instant().truncatedTo(ChronoUnit.MILLIS));</span>
+        try {
+<span class="fc" id="L55">            users.saveAndFlush(user);</span>
+<span class="fc" id="L56">        } catch (DataIntegrityViolationException e) {</span>
+            // Dos registros simultáneos con el mismo usuario o correo: gana la restricción UNIQUE
+<span class="fc" id="L58">            throw new RegistrationConflictException();</span>
+<span class="fc" id="L59">        }</span>
+<span class="fc" id="L60">        LOG.info(&quot;SECURITY user_registered user={}&quot;, LogSanitizer.safe(user.getUsername()));</span>
+<span class="fc" id="L61">        return UserResponse.from(user);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Exclusiones de SpotBugs + Find Security Bugs.
+  Regla del proyecto: cada exclusion es puntual (clase + patron), esta justificada aqui y en
+  docs/ci-cd.md, y tiene un test que demuestra que el riesgo esta mitigado. Nunca se excluye un
+  patron de forma global.
+-->
+<FindBugsFilter>
+    <!--
+      SPRING_CSRF_PROTECTION_DISABLED (High). Decision consciente: la API es stateless y se autentica
+      con bearer token en la cabecera Authorization; no hay cookies de sesion que el navegador envie solo,
+      que es lo que explota CSRF (OWASP CSRF Cheat Sheet). Mitigacion verificada por
+      InjectionAndXssSecurityTest.cors_origenNoPermitido_esRechazado y AuthFlowIntegrationTest
+      (sin token -> 401).
+    -->
+    <Match>
+        <Class name="com.equipo.auth.config.SecurityConfig"/>
+        <Bug pattern="SPRING_CSRF_PROTECTION_DISABLED"/>
+    </Match>
+
+    <!--
+      XSS_SERVLET. ProblemJson escribe JSON (application/problem+json) y escapa comillas, barras,
+      caracteres de control y < > & como \uXXXX. Verificado por ProblemJsonTest y
+      InjectionAndXssSecurityTest.xss_enRutaReflejadaEnError_seEscapa.
+    -->
+    <Match>
+        <Class name="com.equipo.auth.common.error.ProblemJson"/>
+        <Bug pattern="XSS_SERVLET"/>
+    </Match>
+
+    <!--
+      SPRING_ENDPOINT (Low). Es un inventario de endpoints para revision manual, no una vulnerabilidad.
+      Revisados: register/login/refresh publicos con rate limiting; logout y /me exigen JWT
+      (SecurityConfig, denegar por defecto).
+    -->
+    <Match>
+        <Or>
+            <Class name="com.equipo.auth.auth.AuthController"/>
+            <Class name="com.equipo.auth.user.UserController"/>
+        </Or>
+        <Bug pattern="SPRING_ENDPOINT"/>
+    </Match>
+
+    <!--
+      SERVLET_HEADER (Low). Solo se comprueba si la cabecera EXISTE (Authorization para elegir el
+      WWW-Authenticate; Transfer-Encoding para exigir Content-Length). Su valor no se usa para
+      decisiones de seguridad ni se refleja.
+    -->
+    <Match>
+        <Or>
+            <Class name="com.equipo.auth.security.ProblemAuthenticationEntryPoint"/>
+            <Class name="com.equipo.auth.security.RequestSizeFilter"/>
+        </Or>
+        <Bug pattern="SERVLET_HEADER"/>
+    </Match>
+</FindBugsFilter>

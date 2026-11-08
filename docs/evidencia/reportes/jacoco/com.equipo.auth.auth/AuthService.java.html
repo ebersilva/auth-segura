@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">auth-segura</a> &gt; <a href="index.source.html" class="el_package">com.equipo.auth.auth</a> &gt; <span class="el_source">AuthService.java</span></div><h1>AuthService.java</h1><pre class="source lang-java linenums">package com.equipo.auth.auth;
+
+import com.equipo.auth.common.LogSanitizer;
+import com.equipo.auth.ratelimit.RateLimitExceededException;
+import com.equipo.auth.security.AccessTokenDenylist;
+import com.equipo.auth.user.User;
+import com.equipo.auth.user.UserRepository;
+import java.time.Clock;
+import java.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/** Casos de uso de sesión: login, renovación y logout. */
+@Service
+public class AuthService {
+
+<span class="fc" id="L21">    private static final Logger LOG = LoggerFactory.getLogger(AuthService.class);</span>
+
+    private final UserRepository users;
+    private final PasswordEncoder passwordEncoder;
+    private final AccessTokenService accessTokens;
+    private final RefreshTokenService refreshTokens;
+    private final AccessTokenDenylist denylist;
+    private final LoginAttemptGuard guard;
+    private final Clock clock;
+
+    public AuthService(UserRepository users, PasswordEncoder passwordEncoder, AccessTokenService accessTokens,
+<span class="fc" id="L32">            RefreshTokenService refreshTokens, AccessTokenDenylist denylist, LoginAttemptGuard guard, Clock clock) {</span>
+<span class="fc" id="L33">        this.users = users;</span>
+<span class="fc" id="L34">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L35">        this.accessTokens = accessTokens;</span>
+<span class="fc" id="L36">        this.refreshTokens = refreshTokens;</span>
+<span class="fc" id="L37">        this.denylist = denylist;</span>
+<span class="fc" id="L38">        this.guard = guard;</span>
+<span class="fc" id="L39">        this.clock = clock;</span>
+<span class="fc" id="L40">    }</span>
+
+    /**
+     * Autentica y emite un par de tokens.
+     *
+     * &lt;p&gt;Usuario inexistente, contraseña incorrecta y cuenta bloqueada producen la misma excepción y
+     * ejecutan una verificación Argon2 completa, para que ni el mensaje ni el tiempo revelen la causa.
+     * {@code noRollbackFor}: el contador de fallos debe persistir aunque se lance la excepción.
+     *
+     * @param request credenciales
+     * @return access y refresh token
+     * @throws RateLimitExceededException  si el usuario superó los intentos del periodo
+     * @throws InvalidCredentialsException si las credenciales no son válidas o la cuenta está bloqueada
+     */
+    @Transactional(noRollbackFor = InvalidCredentialsException.class)
+    public TokenResponse login(LoginRequest request) {
+<span class="fc" id="L56">        guard.checkRateLimit(request.username());</span>
+<span class="fc" id="L57">        Instant now = clock.instant();</span>
+<span class="fc" id="L58">        User user = users.findByUsername(request.username()).orElse(null);</span>
+<span class="fc bfc" id="L59" title="All 4 branches covered.">        if (user == null || user.isLocked(now)) {</span>
+<span class="fc" id="L60">            guard.spendEquivalentTime(request.password());</span>
+<span class="fc" id="L61">            LOG.warn(&quot;SECURITY login_failed user={} reason={}&quot;, LogSanitizer.safe(request.username()),</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                    user == null ? &quot;unknown_user&quot; : &quot;locked&quot;);</span>
+<span class="fc" id="L63">            throw new InvalidCredentialsException();</span>
+        }
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {</span>
+<span class="fc" id="L66">            boolean lockedNow = guard.registerFailure(user, now);</span>
+<span class="fc" id="L67">            users.save(user);</span>
+<span class="fc" id="L68">            LOG.warn(&quot;SECURITY login_failed user={} reason=bad_password locked={}&quot;,</span>
+<span class="fc" id="L69">                    LogSanitizer.safe(user.getUsername()), lockedNow);</span>
+<span class="fc" id="L70">            throw new InvalidCredentialsException();</span>
+        }
+<span class="fc" id="L72">        user.resetFailedLogins();</span>
+<span class="fc" id="L73">        users.save(user);</span>
+<span class="fc" id="L74">        LOG.info(&quot;SECURITY login_ok user={}&quot;, LogSanitizer.safe(user.getUsername()));</span>
+<span class="fc" id="L75">        return tokensFor(user, refreshTokens.issueNewFamily(user.getId()).token());</span>
+    }
+
+    /**
+     * Rota el refresh token y emite un nuevo access token.
+     *
+     * @param request refresh token actual
+     * @return nuevo par de tokens
+     * @throws InvalidTokenException si el refresh token no es válido o fue reutilizado
+     */
+    public TokenResponse refresh(RefreshRequest request) {
+<span class="fc" id="L86">        RefreshTokenService.Issued issued = refreshTokens.rotate(request.refreshToken());</span>
+<span class="fc" id="L87">        User user = users.findById(issued.userId()).orElseThrow(InvalidTokenException::new);</span>
+<span class="fc" id="L88">        return tokensFor(user, issued.token());</span>
+    }
+
+    /**
+     * Cierra la sesión: revoca la familia del refresh token y el access token actual.
+     *
+     * @param accessToken access token validado
+     * @param request     refresh token de la sesión
+     * @throws InvalidTokenException si el refresh token no pertenece al usuario
+     */
+    public void logout(Jwt accessToken, RefreshRequest request) {
+<span class="fc" id="L99">        Instant expiresAt = accessToken.getExpiresAt();</span>
+<span class="fc" id="L100">        String jti = accessToken.getId();</span>
+<span class="fc bfc" id="L101" title="All 4 branches covered.">        if (expiresAt == null || jti == null) {</span>
+<span class="fc" id="L102">            throw new InvalidTokenException();</span>
+        }
+<span class="fc" id="L104">        refreshTokens.revokeFamily(request.refreshToken(), TokenClaims.userId(accessToken));</span>
+<span class="fc" id="L105">        denylist.revoke(jti, expiresAt);</span>
+<span class="fc" id="L106">        LOG.info(&quot;SECURITY logout user={}&quot;, LogSanitizer.safe(accessToken.getClaimAsString(&quot;username&quot;)));</span>
+<span class="fc" id="L107">    }</span>
+
+    private TokenResponse tokensFor(User user, String refreshToken) {
+<span class="fc" id="L110">        return new TokenResponse(accessTokens.issue(user), &quot;Bearer&quot;, accessTokens.ttlSeconds(), refreshToken,</span>
+<span class="fc" id="L111">                refreshTokens.ttlSeconds());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

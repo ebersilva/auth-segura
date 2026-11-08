@@ -1,0 +1,40 @@
+2026-11-07T20:17:42.826-06:00 WARN c.equipo.auth.auth.RefreshTokenService : SECURITY refresh_token_reuse user=889e1b04-39b8-4ab9-a030-2fa196efaa10 family=a1171e49-a624-46cf-a36b-c620f72fd633 revoked=0
+2026-11-07T20:17:43.809-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=ana reason=locked
+2026-11-07T20:17:43.840-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=nadie reason=unknown_user
+2026-11-07T20:17:43.864-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=ana reason=bad_password locked=false
+2026-11-07T20:17:43.879-06:00 WARN com.equipo.auth.auth.LoginAttemptGuard : SECURITY login_rate_limited user=ana retry_after=30
+2026-11-07T20:17:44.061-06:00 WARN c.e.a.c.error.GlobalExceptionHandler : SECURITY refresh_token_concurrent_use
+2026-11-07T20:17:44.062-06:00 WARN c.e.a.c.error.GlobalExceptionHandler : SECURITY refresh_token_concurrent_use
+2026-11-07T20:17:44.063-06:00 WARN c.e.a.c.error.GlobalExceptionHandler : SECURITY refresh_token_concurrent_use
+2026-11-07T20:17:44.063-06:00 WARN c.e.a.c.error.GlobalExceptionHandler : SECURITY refresh_token_concurrent_use
+2026-11-07T20:17:44.064-06:00 WARN c.e.a.c.error.GlobalExceptionHandler : SECURITY refresh_token_concurrent_use
+2026-11-07T20:17:44.065-06:00 WARN c.e.a.c.error.GlobalExceptionHandler : SECURITY refresh_token_concurrent_use
+2026-11-07T20:17:44.065-06:00 WARN c.e.a.c.error.GlobalExceptionHandler : SECURITY refresh_token_concurrent_use
+2026-11-07T20:17:44.170-06:00 WARN c.equipo.auth.auth.RefreshTokenService : SECURITY refresh_token_reuse user=a14804f1-b2ab-4ae3-9fa1-226ea34fcc24 family=6b4fd617-7bb5-4773-ac8c-f0564c783e23 revoked=0
+2026-11-07T20:17:46.282-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u972f3afc5efa reason=bad_password locked=false
+2026-11-07T20:17:46.319-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u972f3afc5efa reason=bad_password locked=false
+2026-11-07T20:17:46.347-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u972f3afc5efa reason=bad_password locked=false
+2026-11-07T20:17:46.376-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u972f3afc5efa reason=bad_password locked=false
+2026-11-07T20:17:46.403-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u972f3afc5efa reason=bad_password locked=true
+2026-11-07T20:17:46.430-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u972f3afc5efa reason=locked
+2026-11-07T20:17:46.512-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=ud46254fdb3ed reason=unknown_user
+2026-11-07T20:17:46.548-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u5974b311c37a reason=unknown_user
+2026-11-07T20:17:46.575-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=ucbc20c6bd13c reason=unknown_user
+2026-11-07T20:17:46.600-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u172168e738cb reason=unknown_user
+2026-11-07T20:17:46.625-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u5a2eeaa9ce31 reason=unknown_user
+2026-11-07T20:17:46.650-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u793289590545 reason=unknown_user
+2026-11-07T20:17:46.677-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u303f34dd376b reason=unknown_user
+2026-11-07T20:17:46.702-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u76930a3bdfc9 reason=unknown_user
+2026-11-07T20:17:46.727-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u777dd26adc85 reason=unknown_user
+2026-11-07T20:17:46.753-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u59c2a426a030 reason=unknown_user
+2026-11-07T20:17:46.777-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u65128e11b1ce reason=unknown_user
+2026-11-07T20:17:46.808-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u58bce69c6ccc reason=unknown_user
+2026-11-07T20:17:46.833-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=ua719e11cbeb0 reason=unknown_user
+2026-11-07T20:17:46.861-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=ua129a163e678 reason=unknown_user
+2026-11-07T20:17:46.885-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u9633b143346b reason=unknown_user
+2026-11-07T20:17:46.911-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=uaa0c9c3665c7 reason=unknown_user
+2026-11-07T20:17:46.937-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u4393d68e3e43 reason=unknown_user
+2026-11-07T20:17:46.963-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=ubceb4eda88ad reason=unknown_user
+2026-11-07T20:17:46.990-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u7ad3f9227386 reason=unknown_user
+2026-11-07T20:17:47.017-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u663de4ea2054 reason=unknown_user
+2026-11-07T20:17:47.047-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=u5d54f77205e9 reason=unknown_user

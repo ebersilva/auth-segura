@@ -1,0 +1,9 @@
+2026-11-07T20:17:10.450-06:00 INFO c.equipo.auth.auth.RegistrationService : SECURITY user_registered user=demo4230
+2026-11-07T20:17:10.498-06:00 INFO com.equipo.auth.auth.AuthService : SECURITY login_ok user=demo4230
+2026-11-07T20:17:10.699-06:00 WARN c.equipo.auth.auth.RefreshTokenService : SECURITY refresh_token_reuse user=2e593fea-e5d0-489e-9eb7-031578893bf8 family=21300639-5422-48c3-b4d0-9de0c0287735 revoked=1
+2026-11-07T20:17:10.711-06:00 WARN c.equipo.auth.auth.RefreshTokenService : SECURITY refresh_token_reuse user=2e593fea-e5d0-489e-9eb7-031578893bf8 family=21300639-5422-48c3-b4d0-9de0c0287735 revoked=0
+2026-11-07T20:17:10.801-06:00 INFO com.equipo.auth.auth.AuthService : SECURITY login_ok user=demo4230
+2026-11-07T20:17:10.851-06:00 INFO com.equipo.auth.auth.AuthService : SECURITY logout user=demo4230
+2026-11-07T20:17:10.891-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=demo4230 reason=bad_password locked=false
+2026-11-07T20:17:10.927-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=demo4230 reason=bad_password locked=false
+2026-11-07T20:17:10.962-06:00 WARN com.equipo.auth.auth.AuthService : SECURITY login_failed user=demo4230 reason=bad_password locked=false
